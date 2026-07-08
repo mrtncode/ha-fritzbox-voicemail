@@ -1,0 +1,15 @@
+{
+  "domain": "fritzbox_voicemail",
+  "name": "FritzBox Voicemail",
+  "codeowners": [
+    "@ludeeus"
+  ],
+  "requirements": [
+    "custom_fritzconnection@git+https://github.com/mrtncode/fritzconnection.git"
+  ],
+  "config_flow": true,
+  "documentation": "https://github.com/mrtncode/ha-fritzbox-voicemail",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/mrtncode/ha-fritzbox-voicemail/issues",
+  "version": "0.1.0"
+}
