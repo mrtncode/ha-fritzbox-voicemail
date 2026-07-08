@@ -1,4 +1,4 @@
-"""Adds config flow for Blueprint."""
+"""Adds config flow for FritzBox Voicemail."""
 
 from __future__ import annotations
 
@@ -14,8 +14,8 @@ from custom_fritzconnection import FritzConnection
 from .const import DOMAIN, LOGGER
 
 
-class BlueprintFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
-    """Config flow for Blueprint."""
+class FritzBoxVoicemailFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
+    """Config flow for FritzBox Voicemail."""
 
     VERSION = 1
 
