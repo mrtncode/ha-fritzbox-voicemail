@@ -22,7 +22,7 @@ ENTITY_DESCRIPTIONS = (
     SwitchEntityDescription(
         key="voicemail_enabled",
         name="Voicemail Enabled",
-        icon="mdi:forum",
+        icon="mdi:voicemail",
     ),
 )
 
