@@ -18,8 +18,7 @@ class MailboxView(HomeAssistantView):
         tam = FritzTAM(fc=runtime_data.client)
 
         wav_bytes = await self.hass.async_add_executor_job(
-            tam.message,
-            int(message_index),
+            lambda: tam.message(messageIndex=int(message_index))
         )
 
         return web.Response(

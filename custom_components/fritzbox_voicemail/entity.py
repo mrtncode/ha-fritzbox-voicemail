@@ -17,6 +17,7 @@ class IntegrationBlueprintEntity(CoordinatorEntity[FritzboxVoicemailDataUpdateCo
     def __init__(self, coordinator: FritzboxVoicemailDataUpdateCoordinator) -> None:
         """Initialize."""
         super().__init__(coordinator)
+        self._tam_name = f"Fritzbox Voicemail"
         self._attr_unique_id = coordinator.config_entry.entry_id
         self._attr_device_info = DeviceInfo(
             identifiers={
@@ -25,4 +26,5 @@ class IntegrationBlueprintEntity(CoordinatorEntity[FritzboxVoicemailDataUpdateCo
                     coordinator.config_entry.entry_id,
                 ),
             },
+            name=self._tam_name
         )

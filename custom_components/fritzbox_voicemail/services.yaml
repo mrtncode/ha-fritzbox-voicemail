@@ -1,0 +1,23 @@
+delete_voicemail_message:
+  name: Delete voicemail messages
+  description: Delete one voicemail message by index or delete all messages.
+  fields:
+    delete_mode:
+      name: Delete mode
+      description: Choose whether to delete a specific message or all messages.
+      required: true
+      selector:
+        select:
+          options:
+            - all
+            - specific
+
+    message_index:
+      name: Message index
+      description: Index of the voicemail message to delete.
+      required: false
+      selector:
+        number:
+          min: 0
+          step: 1
+          mode: box
