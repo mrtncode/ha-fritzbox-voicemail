@@ -1,5 +1,3 @@
-"""Custom types for integration_blueprint."""
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -9,16 +7,17 @@ if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
     from homeassistant.loader import Integration
 
-    from .coordinator import BlueprintDataUpdateCoordinator
+    from .coordinator import FritzboxVoicemailDataUpdateCoordinator
+    from custom_fritzconnection.core.fritzconnection import FritzConnection
 
 
-type IntegrationBlueprintConfigEntry = ConfigEntry[IntegrationBlueprintData]
+type FritzboxVoicemailConfigEntry = ConfigEntry[FritzboxVoicemailData]
 
 
 @dataclass
-class IntegrationBlueprintData:
-    """Data for the Blueprint integration."""
+class FritzboxVoicemailData:
+    """Data for the Fritzbox Voicemail integration."""
 
-    client: None
-    coordinator: BlueprintDataUpdateCoordinator
+    client: FritzConnection
+    coordinator: FritzboxVoicemailDataUpdateCoordinator
     integration: Integration

@@ -1,24 +1,56 @@
-"""DataUpdateCoordinator for integration_blueprint."""
+"""DataUpdateCoordinator for Fritzbox Voicemail."""
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from datetime import timedelta
+from typing import Any, TYPE_CHECKING
 
 from homeassistant.exceptions import ConfigEntryAuthFailed
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.helpers.update_coordinator import (
+    DataUpdateCoordinator,
+    UpdateFailed,
+)
 
+from custom_fritzconnection.lib.fritztam import FritzTAM
 
+from .const import DOMAIN, LOGGER
 
 if TYPE_CHECKING:
-    from .data import IntegrationBlueprintConfigEntry
+    from homeassistant.core import HomeAssistant
+    from .data import FritzboxVoicemailConfigEntry
+    from custom_fritzconnection.core.fritzconnection import FritzConnection
 
 
-# https://developers.home-assistant.io/docs/integration_fetching_data#coordinated-single-api-poll-for-data-for-all-entities
-class BlueprintDataUpdateCoordinator(DataUpdateCoordinator):
-    """Class to manage fetching data from the API."""
+class FritzboxVoicemailDataUpdateCoordinator(DataUpdateCoordinator):
+    """Class to manage fetching Fritzbox voicemail data."""
 
-    config_entry: IntegrationBlueprintConfigEntry
+    config_entry: FritzboxVoicemailConfigEntry
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        fritz_connection: FritzConnection,
+    ) -> None:
+        """Initialize coordinator."""
+
+        self.tam = FritzTAM(fc=fritz_connection)
+
+        super().__init__(
+            hass,
+            LOGGER,
+            name=DOMAIN,
+            update_interval=timedelta(minutes=5),
+        )
 
     async def _async_update_data(self) -> Any:
-        """Update data via library."""
-        pass
+        """Fetch data from FritzBox."""
+
+        try:
+            return await self.hass.async_add_executor_job(
+                self.tam.message_list
+            )
+
+        except Exception as err:
+            raise UpdateFailed(
+                f"Failed to update voicemail data: {err}"
+            ) from err

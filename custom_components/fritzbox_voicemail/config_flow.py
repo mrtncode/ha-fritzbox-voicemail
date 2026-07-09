@@ -68,8 +68,11 @@ class FritzBoxVoicemailFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def _test_credentials(self, address: str, username: str, password: str) -> None:
         """Validate credentials."""
-        fc = FritzConnection(
-            address=address,
-            user=username,
-            password=password
+
+        await self.hass.async_add_executor_job(
+            lambda: FritzConnection(
+                address=address,
+                user=username,
+                password=password,
+            )
         )
