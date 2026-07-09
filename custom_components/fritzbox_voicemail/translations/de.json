@@ -1,0 +1,21 @@
+{
+    "config": {
+        "step": {
+            "user": {
+                "data": {
+                    "url": "Fritz!Box URL",
+                    "username": "Benutzername",
+                    "password": "Passwort"
+                }
+            }
+        },
+        "error": {
+            "auth": "Benutzername/Passwort ist falsch.",
+            "connection": "Verbindung zum Server nicht möglich.",
+            "unknown": "Ein unbekannter Fehler ist aufgetreten."
+        },
+        "abort": {
+            "already_configured": "Dieser Eintrag ist bereits konfiguriert."
+        }
+    }
+}

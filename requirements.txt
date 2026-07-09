@@ -1,5 +1,5 @@
 colorlog==6.10.1
-homeassistant==2026.3.2
+homeassistant==2026.7.1
 pip>=26.1.2
 ruff==0.15.20
 custom_fritzconnection@git+https://github.com/mrtncode/fritzconnection.git

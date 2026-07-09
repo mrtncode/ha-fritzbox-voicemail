@@ -33,7 +33,7 @@ class FritzBoxVoicemailFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                     password=user_input[CONF_PASSWORD],
                 )
                 return self.async_create_entry(
-                    title=user_input[CONF_USERNAME],
+                    title="Fritz!Box " + user_input[CONF_USERNAME],
                     data=user_input,
                 )
             except Exception as exception:
