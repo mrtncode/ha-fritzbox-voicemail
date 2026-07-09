@@ -5,7 +5,6 @@ from __future__ import annotations
 from datetime import timedelta
 from typing import Any, TYPE_CHECKING
 
-from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
     UpdateFailed,
@@ -22,7 +21,7 @@ if TYPE_CHECKING:
 
 
 class FritzboxVoicemailDataUpdateCoordinator(DataUpdateCoordinator):
-    """Class to manage fetching Fritzbox voicemail data."""
+    """Manage fetching FritzBox voicemail data."""
 
     config_entry: FritzboxVoicemailConfigEntry
 
@@ -39,16 +38,25 @@ class FritzboxVoicemailDataUpdateCoordinator(DataUpdateCoordinator):
             hass,
             LOGGER,
             name=DOMAIN,
-            update_interval=timedelta(minutes=5),
+            update_interval=timedelta(minutes=1),
         )
 
-    async def _async_update_data(self) -> Any:
+    async def _async_update_data(self) -> dict[str, Any]:
         """Fetch data from FritzBox."""
 
         try:
-            return await self.hass.async_add_executor_job(
-                self.tam.message_list
+            tam_list = await self.hass.async_add_executor_job(
+                self.tam.tam_list,
             )
+
+            messages = await self.hass.async_add_executor_job(
+                self.tam.message_list,
+            )
+
+            return {
+                "tam_list": tam_list,
+                "messages": messages,
+            }
 
         except Exception as err:
             raise UpdateFailed(

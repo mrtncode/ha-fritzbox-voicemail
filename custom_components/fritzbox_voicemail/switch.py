@@ -5,8 +5,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
-
+from .const import DOMAIN
 from custom_components.fritzbox_voicemail.data import FritzboxVoicemailConfigEntry
+from custom_fritzconnection.lib.fritztam import FritzTAM
 
 from .entity import IntegrationBlueprintEntity
 
@@ -19,9 +20,9 @@ if TYPE_CHECKING:
 
 ENTITY_DESCRIPTIONS = (
     SwitchEntityDescription(
-        key="integration_blueprint",
-        name="Integration Switch",
-        icon="mdi:format-quote-close",
+        key="voicemail_enabled",
+        name="Voicemail Enabled",
+        icon="mdi:forum",
     ),
 )
 
@@ -33,35 +34,54 @@ async def async_setup_entry(
 ) -> None:
     """Set up the switch platform."""
     async_add_entities(
-        IntegrationBlueprintSwitch(
+        FritzboxVoicemailSwitch(
             coordinator=entry.runtime_data.coordinator,
             entity_description=entity_description,
+            hass=hass,
         )
         for entity_description in ENTITY_DESCRIPTIONS
     )
 
 
-class IntegrationBlueprintSwitch(IntegrationBlueprintEntity, SwitchEntity):
-    """integration_blueprint switch class."""
+class FritzboxVoicemailSwitch(IntegrationBlueprintEntity, SwitchEntity):
+    """fritzbox_voicemail switch class."""
 
     def __init__(
         self,
         coordinator: FritzboxVoicemailDataUpdateCoordinator,
         entity_description: SwitchEntityDescription,
+        hass: HomeAssistant,
     ) -> None:
         """Initialize the switch class."""
         super().__init__(coordinator)
         self.entity_description = entity_description
+        self.hass = hass
+        runtime_data = next(iter(self.hass.data[DOMAIN].values()))
+        self.fritz_connection = runtime_data.client
+        self.tam = FritzTAM(fc=self.fritz_connection)
 
     @property
     def is_on(self) -> bool:
-        """Return true if the switch is on."""
-        return True
+        selected_tam = next(
+            (
+                tam
+                for tam in self.coordinator.data["tam_list"]
+                if tam["Index"] == "0"
+            ),
+            None,
+        )
+        return selected_tam is not None and selected_tam["Enable"] == "1"
 
-    async def async_turn_on(self, **_: Any) -> None:
-        """Turn on the switch."""
-        pass
+    async def async_turn_on(self, **kwargs):
+        await self.hass.async_add_executor_job(
+            lambda: self.tam.set_enable(enable=True)
+        )
+        await self.coordinator.async_request_refresh()
+
 
     async def async_turn_off(self, **_: Any) -> None:
         """Turn off the switch."""
-        pass
+        await self.hass.async_add_executor_job(
+            lambda: self.tam.set_enable(enable=False)
+        )
+        await self.coordinator.async_request_refresh()
