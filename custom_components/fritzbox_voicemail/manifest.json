@@ -1,8 +1,8 @@
 {
   "domain": "fritzbox_voicemail",
-  "name": "FritzBox Voicemail",
+  "name": "FRITZ!Box Voicemail",
   "codeowners": [
-    "@ludeeus"
+    "@mrtncode"
   ],
   "requirements": [
     "custom_fritzconnection@git+https://github.com/mrtncode/fritzconnection.git"

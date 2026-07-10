@@ -24,7 +24,6 @@ class MailboxMediaSource(media_source.MediaSource):
     async def async_browse_media(self, item):
         tam = FritzTAM(fc=self.fritz_connection)
         messages = await self.hass.async_add_executor_job(tam.message_list) # use default TAM with index 0
-        print(messages)
         children = [
             media_source.BrowseMediaSource(
                 domain=DOMAIN,
