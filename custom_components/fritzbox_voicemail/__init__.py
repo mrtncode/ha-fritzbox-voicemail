@@ -24,6 +24,8 @@ PLATFORMS: list[Platform] = [
     Platform.SWITCH
 ]
 
+CONFIG_SCHEMA = cv.empty_config_schema
+
 SERVICE_DELETE_VOICEMAIL_MESSAGE = "delete_voicemail_message"
 
 SERVICE_SCHEMA = vol.Schema(
