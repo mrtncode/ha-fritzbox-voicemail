@@ -10,7 +10,6 @@
   "after_dependencies": [
     "http"
   ],
-  ],
   "config_flow": true,
   "documentation": "https://github.com/mrtncode/ha-fritzbox-voicemail",
   "iot_class": "local_polling",
