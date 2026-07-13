@@ -5,8 +5,11 @@
     "@mrtncode"
   ],
   "requirements": [
-    "custom_fritzconnection@git+https://github.com/mrtncode/fritzconnection.git",
+    "custom_fritzconnection@git+https://github.com/mrtncode/fritzconnection.git"
+  ],
+  "after_dependencies": [
     "http"
+  ],
   ],
   "config_flow": true,
   "documentation": "https://github.com/mrtncode/ha-fritzbox-voicemail",
