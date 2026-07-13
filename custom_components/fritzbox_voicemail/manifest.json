@@ -1,18 +1,18 @@
 {
   "domain": "fritzbox_voicemail",
   "name": "FRITZ!Box Voicemail",
-  "codeowners": [
-    "@mrtncode"
-  ],
-  "requirements": [
-    "custom_fritzconnection@git+https://github.com/mrtncode/fritzconnection.git"
-  ],
   "after_dependencies": [
     "http"
+  ],
+  "codeowners": [
+    "@mrtncode"
   ],
   "config_flow": true,
   "documentation": "https://github.com/mrtncode/ha-fritzbox-voicemail",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/mrtncode/ha-fritzbox-voicemail/issues",
+  "requirements": [
+    "custom_fritzconnection@git+https://github.com/mrtncode/fritzconnection.git"
+  ],
   "version": "0.1.0"
 }
