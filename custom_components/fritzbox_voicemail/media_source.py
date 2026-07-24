@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from io import BytesIO
-
+from custom_fritzconnection.lib.fritztam import FritzTAM
 from homeassistant.components import media_source
 from homeassistant.components.media_player.const import MediaClass
 from homeassistant.core import HomeAssistant
+
 from .const import DOMAIN
-from custom_fritzconnection.lib.fritztam import FritzTAM
 
 
 async def async_get_media_source(hass: HomeAssistant):
@@ -23,14 +22,21 @@ class MailboxMediaSource(media_source.MediaSource):
 
     async def async_browse_media(self, item):
         tam = FritzTAM(fc=self.fritz_connection)
-        messages = await self.hass.async_add_executor_job(tam.message_list) # use default TAM with index 0
+        messages = await self.hass.async_add_executor_job(
+            tam.message_list
+        )  # use default TAM with index 0
         children = [
             media_source.BrowseMediaSource(
                 domain=DOMAIN,
                 identifier=str(msg["Index"]),
                 media_class=MediaClass.MUSIC,
                 media_content_type="audio/wav",
-                title=msg["Number"] + " - " + msg["Date"] + (" - " + msg["Name"] if msg.get("Name") else ""), # include msg["Name"] if available
+                title=msg["Number"]
+                + " - "
+                + msg["Date"]
+                + (
+                    " - " + msg["Name"] if msg.get("Name") else ""
+                ),  # include msg["Name"] if available
                 can_play=True,
                 can_expand=False,
             )

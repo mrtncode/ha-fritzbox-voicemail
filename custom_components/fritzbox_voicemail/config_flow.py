@@ -3,14 +3,11 @@
 from __future__ import annotations
 
 import voluptuous as vol
-from homeassistant import config_entries
-from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, CONF_URL
-from homeassistant.helpers import selector
-from homeassistant.helpers.aiohttp_client import async_create_clientsession
-from homeassistant.loader import async_get_loaded_integration
-from slugify import slugify
-
 from custom_fritzconnection import FritzConnection
+from homeassistant import config_entries
+from homeassistant.const import CONF_PASSWORD, CONF_URL, CONF_USERNAME
+from homeassistant.helpers import selector
+
 from .const import DOMAIN, LOGGER
 
 
@@ -60,15 +57,16 @@ class FritzBoxVoicemailFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                         selector.TextSelectorConfig(
                             type=selector.TextSelectorType.PASSWORD,
                         ),
-                    )
+                    ),
                 }
             ),
             errors=_errors,
         )
 
-    async def _test_credentials(self, address: str, username: str, password: str) -> None:
+    async def _test_credentials(
+        self, address: str, username: str, password: str
+    ) -> None:
         """Validate credentials."""
-
         await self.hass.async_add_executor_job(
             lambda: FritzConnection(
                 address=address,

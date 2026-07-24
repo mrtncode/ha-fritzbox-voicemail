@@ -3,26 +3,22 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import voluptuous as vol
+from custom_fritzconnection import FritzConnection
+from custom_fritzconnection.lib.fritztam import FritzTAM
 from homeassistant.const import CONF_PASSWORD, CONF_URL, CONF_USERNAME, Platform
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.const import Platform
-from homeassistant.loader import async_get_loaded_integration
 from homeassistant.helpers import config_validation as cv
+from homeassistant.loader import async_get_loaded_integration
 
 from .const import DOMAIN
 from .coordinator import FritzboxVoicemailDataUpdateCoordinator
 from .data import FritzboxVoicemailConfigEntry, FritzboxVoicemailData
 from .views import MailboxView
-from custom_fritzconnection import FritzConnection
-from custom_fritzconnection.lib.fritztam import FritzTAM
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
 
-PLATFORMS: list[Platform] = [
-    Platform.SENSOR,
-    Platform.SWITCH
-]
+PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.SWITCH]
 
 CONFIG_SCHEMA = cv.empty_config_schema(DOMAIN)
 
@@ -41,7 +37,6 @@ async def async_delete_voicemail_message(
     service_call,
 ) -> None:
     """Delete voicemail messages from the FritzBox."""
-
     runtime_data = next(iter(hass.data.get(DOMAIN, {}).values()), None)
 
     if runtime_data is None:
@@ -78,7 +73,6 @@ async def async_setup(
     config: dict,
 ) -> bool:
     """Set up integration."""
-
     hass.http.register_view(MailboxView(hass))
 
     async def handle_delete_voicemail_message(service_call) -> None:
@@ -99,12 +93,11 @@ async def async_setup_entry(
     entry: FritzboxVoicemailConfigEntry,
 ) -> bool:
     """Set up integration from config entry."""
-
     fritz_connection = await hass.async_add_executor_job(
         lambda: FritzConnection(
             address=entry.data[CONF_URL],
             user=entry.data[CONF_USERNAME],
-            password=entry.data[CONF_PASSWORD]
+            password=entry.data[CONF_PASSWORD],
         )
     )
 
@@ -127,27 +120,23 @@ async def async_setup_entry(
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = entry.runtime_data
 
-    hass.http.register_view(
-        MailboxView(hass)
-    )
+    hass.http.register_view(MailboxView(hass))
 
     await hass.config_entries.async_forward_entry_setups(
         entry,
         PLATFORMS,
     )
 
-    entry.async_on_unload(
-        entry.add_update_listener(async_reload_entry)
-    )
+    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
     return True
+
 
 async def async_unload_entry(
     hass: HomeAssistant,
     entry: FritzboxVoicemailConfigEntry,
 ) -> bool:
     """Unload integration."""
-
     unload_ok = await hass.config_entries.async_unload_platforms(
         entry,
         PLATFORMS,
@@ -164,5 +153,4 @@ async def async_reload_entry(
     entry: FritzboxVoicemailConfigEntry,
 ) -> None:
     """Reload integration."""
-
     await hass.config_entries.async_reload(entry.entry_id)

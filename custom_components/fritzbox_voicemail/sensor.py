@@ -34,7 +34,6 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the sensor platform."""
-
     async_add_entities(
         FritzboxVoicemailSensor(
             coordinator=entry.runtime_data.coordinator,
@@ -53,20 +52,17 @@ class FritzboxVoicemailSensor(IntegrationBlueprintEntity, SensorEntity):
         entity_description: SensorEntityDescription,
     ) -> None:
         """Initialize sensor."""
-
         super().__init__(coordinator)
         self.entity_description = entity_description
 
     @property
     def native_value(self) -> int:
         """Return number of voicemail messages."""
-
         return len(self.coordinator.data["messages"])
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return voicemail messages as attributes."""
-
         return {
             "messages": self.coordinator.data["messages"],
         }

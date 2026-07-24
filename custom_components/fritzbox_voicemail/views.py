@@ -1,6 +1,7 @@
 from aiohttp import web
-from homeassistant.components.http import HomeAssistantView
 from custom_fritzconnection.lib.fritztam import FritzTAM
+from homeassistant.components.http import HomeAssistantView
+
 from .const import DOMAIN
 
 
