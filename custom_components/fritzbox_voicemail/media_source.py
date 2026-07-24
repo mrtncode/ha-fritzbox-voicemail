@@ -20,7 +20,7 @@ class MailboxMediaSource(media_source.MediaSource):
         self.fritz_connection = runtime_data.client
         self.name = "Mailbox"
 
-    async def async_browse_media(self, item):
+    async def async_browse_media(self, item: media_source.MediaSourceItem):
         tam = FritzTAM(fc=self.fritz_connection)
         messages = await self.hass.async_add_executor_job(
             tam.message_list
@@ -54,7 +54,8 @@ class MailboxMediaSource(media_source.MediaSource):
             children=children,
         )
 
-    async def async_resolve_media(self, item):
+    async def async_resolve_media(self, item: media_source.MediaSourceItem):
+        """Resolve media item to a playable URL."""
         return media_source.PlayMedia(
             url=f"/api/mailbox/{item.identifier}",
             mime_type="audio/wav",
