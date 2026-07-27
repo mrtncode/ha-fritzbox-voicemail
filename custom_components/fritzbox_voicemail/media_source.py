@@ -25,13 +25,16 @@ class MailboxMediaSource(media_source.MediaSource):
         """Initialize the media source."""
         super().__init__(domain)
         self.hass = hass
-        runtime_data = next(iter(self.hass.data[DOMAIN].values()))
-        self.fritz_connection = runtime_data.client
         self.name = "Mailbox"
 
-    async def async_browse_media(self) -> media_source.BrowseMediaSource:
+    async def async_browse_media(
+        self, item: media_source.MediaSourceItem | None = None
+    ) -> media_source.BrowseMediaSource:
         """Browse media items."""
-        tam = FritzTAM(fc=self.fritz_connection)
+        runtime_data = next(iter(self.hass.data[DOMAIN].values()))
+        fritz_connection = runtime_data.client
+
+        tam = FritzTAM(fc=fritz_connection)
         messages = await self.hass.async_add_executor_job(
             tam.message_list
         )  # use default TAM with index 0
