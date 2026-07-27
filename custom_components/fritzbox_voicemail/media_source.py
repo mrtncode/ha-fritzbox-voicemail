@@ -27,9 +27,7 @@ class MailboxMediaSource(media_source.MediaSource):
         self.hass = hass
         self.name = "Mailbox"
 
-    async def async_browse_media(
-        self, item: media_source.MediaSourceItem | None = None
-    ) -> media_source.BrowseMediaSource:
+    async def async_browse_media(self) -> media_source.BrowseMediaSource:
         """Browse media items."""
         runtime_data = next(iter(self.hass.data[DOMAIN].values()))
         fritz_connection = runtime_data.client
