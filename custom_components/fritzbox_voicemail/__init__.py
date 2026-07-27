@@ -1,3 +1,5 @@
+"""Fritzbox Voicemail integration."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -16,7 +18,7 @@ from .data import FritzboxVoicemailConfigEntry, FritzboxVoicemailData
 from .views import MailboxView
 
 if TYPE_CHECKING:
-    from homeassistant.core import HomeAssistant
+    from homeassistant.core import HomeAssistant, ServiceCall
 
 PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.SWITCH]
 
@@ -34,13 +36,14 @@ SERVICE_SCHEMA = vol.Schema(
 
 async def async_delete_voicemail_message(
     hass: HomeAssistant,
-    service_call,
+    service_call: ServiceCall,
 ) -> None:
     """Delete voicemail messages from the FritzBox."""
     runtime_data = next(iter(hass.data.get(DOMAIN, {}).values()), None)
 
     if runtime_data is None:
-        raise HomeAssistantError("FritzBox Voicemail is not set up")
+        msg = "FritzBox Voicemail is not set up. Please set up the integration first."
+        raise HomeAssistantError(msg)
 
     fritz_connection = runtime_data.client
     tam = FritzTAM(fc=fritz_connection)
@@ -49,9 +52,8 @@ async def async_delete_voicemail_message(
     if delete_mode == "specific":
         message_index = service_call.data.get("message_index")
         if message_index is None:
-            raise HomeAssistantError(
-                "message_index is required when delete_mode is specific"
-            )
+            msg = "message_index is required when delete_mode is specific"
+            raise HomeAssistantError(msg)
 
         await hass.async_add_executor_job(
             lambda: tam.delete_message(messageIndex=message_index)
@@ -70,12 +72,11 @@ async def async_delete_voicemail_message(
 
 async def async_setup(
     hass: HomeAssistant,
-    config: dict,
 ) -> bool:
     """Set up integration."""
     hass.http.register_view(MailboxView(hass))
 
-    async def handle_delete_voicemail_message(service_call) -> None:
+    async def handle_delete_voicemail_message(service_call: ServiceCall) -> None:
         await async_delete_voicemail_message(hass, service_call)
 
     hass.services.async_register(

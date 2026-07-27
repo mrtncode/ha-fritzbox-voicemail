@@ -51,10 +51,12 @@ class FritzboxVoicemailDataUpdateCoordinator(DataUpdateCoordinator):
                 self.tam.message_list,
             )
 
+        except Exception as err:
+            msg = f"Failed to update data from FritzBox: {err}"
+            raise UpdateFailed(msg) from err
+
+        else:
             return {
                 "tam_list": tam_list,
                 "messages": messages,
             }
-
-        except Exception as err:
-            raise UpdateFailed(f"Failed to update voicemail data: {err}") from err
