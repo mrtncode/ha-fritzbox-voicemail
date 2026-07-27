@@ -33,8 +33,8 @@ class FritzBoxVoicemailFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                     title="Fritz!Box " + user_input[CONF_USERNAME],
                     data=user_input,
                 )
-            except Exception as exception:
-                LOGGER.warning(exception)
+            except Exception as exception:  # noqa: BLE001
+                LOGGER.exception("Unexpected error during auth: %s", exception)
                 _errors["base"] = "auth"
         return self.async_show_form(
             step_id="user",

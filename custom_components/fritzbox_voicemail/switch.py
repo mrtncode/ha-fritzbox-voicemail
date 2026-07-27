@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from custom_fritzconnection.lib.fritztam import FritzTAM
 from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
@@ -70,12 +70,12 @@ class FritzboxVoicemailSwitch(IntegrationBlueprintEntity, SwitchEntity):
         )
         return selected_tam is not None and selected_tam["Enable"] == "1"
 
-    async def async_turn_on(self, **kwargs) -> None:
+    async def async_turn_on(self) -> None:
         """Turn on the switch."""
         await self.hass.async_add_executor_job(lambda: self.tam.set_enable(enable=True))
         await self.coordinator.async_request_refresh()
 
-    async def async_turn_off(self, **_: Any) -> None:
+    async def async_turn_off(self) -> None:
         """Turn off the switch."""
         await self.hass.async_add_executor_job(
             lambda: self.tam.set_enable(enable=False)

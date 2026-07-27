@@ -1,3 +1,5 @@
+"""Data for the Fritzbox Voicemail integration."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
