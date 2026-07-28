@@ -72,6 +72,7 @@ async def async_delete_voicemail_message(
 
 async def async_setup(
     hass: HomeAssistant,
+    config: dict,  # noqa: ARG001
 ) -> bool:
     """Set up integration."""
     hass.http.register_view(MailboxView(hass))

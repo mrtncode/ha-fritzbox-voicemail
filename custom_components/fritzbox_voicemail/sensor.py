@@ -12,6 +12,7 @@ from homeassistant.components.sensor import (
 from .entity import IntegrationBlueprintEntity
 
 if TYPE_CHECKING:
+    from homeassistant.core import HomeAssistant
     from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
     from .coordinator import FritzboxVoicemailDataUpdateCoordinator
@@ -28,6 +29,7 @@ ENTITY_DESCRIPTIONS = (
 
 
 async def async_setup_entry(
+    hass: HomeAssistant,  # noqa: ARG001
     entry: FritzboxVoicemailConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
