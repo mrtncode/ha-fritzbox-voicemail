@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from custom_fritzconnection.lib.fritztam import FritzTAM
+from typing import TYPE_CHECKING
+
 from homeassistant.components import media_source
 from homeassistant.components.media_player.const import MediaClass
-from homeassistant.const import TYPE_CHECKING
 
 from .const import DOMAIN
 
@@ -33,29 +33,32 @@ class MailboxMediaSource(media_source.MediaSource):
     ) -> media_source.BrowseMediaSource:
         """Browse media items."""
         runtime_data = next(iter(self.hass.data[DOMAIN].values()))
-        fritz_connection = runtime_data.client
+        messages = (
+            runtime_data.coordinator.data.get("messages", [])
+            if runtime_data.coordinator.data
+            else []
+        )
 
-        tam = FritzTAM(fc=fritz_connection)
-        messages = await self.hass.async_add_executor_job(
-            tam.message_list
-        )  # use default TAM with index 0
-        children = [
-            media_source.BrowseMediaSource(
-                domain=DOMAIN,
-                identifier=str(msg["Index"]),
-                media_class=MediaClass.MUSIC,
-                media_content_type="audio/wav",
-                title=msg["Number"]
-                + " - "
-                + msg["Date"]
-                + (
-                    " - " + msg["Name"] if msg.get("Name") else ""
-                ),  # include msg["Name"] if available
-                can_play=True,
-                can_expand=False,
+        children = []
+        for msg in messages:
+            tam_idx = msg.get("Tam")
+            if tam_idx is None:
+                tam_idx = 0
+
+            children.append(
+                media_source.BrowseMediaSource(
+                    domain=DOMAIN,
+                    identifier=f"{tam_idx}/{msg['Index']}",
+                    media_class=MediaClass.MUSIC,
+                    media_content_type="audio/wav",
+                    title=msg["Number"]
+                    + " - "
+                    + msg["Date"]
+                    + (" - " + msg["Name"] if msg.get("Name") else ""),
+                    can_play=True,
+                    can_expand=False,
+                )
             )
-            for msg in messages
-        ]
 
         return media_source.BrowseMediaSource(
             domain=DOMAIN,
