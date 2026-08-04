@@ -78,7 +78,7 @@ async def async_delete_voicemail_message(
 
         if delete_mode == "specific":
             await hass.async_add_executor_job(
-                lambda: tam.delete_message(idx=tam_index, index=int(message_index))
+                lambda: tam.delete_message(tamIndex=str(tam_index), messageIndex=message_index)
             )
         else:
             messages = (runtime_data.coordinator.data or {}).get("messages", []) or []
@@ -86,7 +86,7 @@ async def async_delete_voicemail_message(
 
             def _del_all():
                 for m in tam_msgs:
-                    tam.delete_message(idx=tam_index, index=int(m["Index"]))
+                    tam.delete_message(tamIndex=str(tam_index), messageIndex=(m["Index"]))
 
             await hass.async_add_executor_job(_del_all)
 

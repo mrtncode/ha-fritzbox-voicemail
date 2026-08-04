@@ -40,15 +40,31 @@ class FritzboxVoicemailDataUpdateCoordinator(DataUpdateCoordinator):
             update_interval=timedelta(minutes=1),
         )
 
+    def _fetch_all_tam_data(self) -> dict[str, Any]:
+        """Fetch TAM list and messages for all configured TAMs (multi-TAM support)."""
+        tam_list = self.tam.tam_list()
+        all_messages: list[dict[str, Any]] = []
+
+        for tam_info in tam_list:
+            tam_idx = int(tam_info.get("Index", 0))
+            try:
+                messages = self.tam.message_list(tamIndex=str(tam_idx))
+                for msg in messages:
+                    msg["Tam"] = tam_idx
+                    all_messages.append(msg)
+            except Exception as err:
+                LOGGER.warning("Could not fetch messages for TAM %s: %s", tam_idx, err)
+
+        return {
+            "tam_list": tam_list,
+            "messages": all_messages,
+        }
+
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch data from FritzBox."""
         try:
-            tam_list = await self.hass.async_add_executor_job(
-                self.tam.tam_list,
-            )
-
-            messages = await self.hass.async_add_executor_job(
-                self.tam.message_list,
+            data = await self.hass.async_add_executor_job(
+                self._fetch_all_tam_data
             )
 
         except Exception as err:
@@ -56,7 +72,4 @@ class FritzboxVoicemailDataUpdateCoordinator(DataUpdateCoordinator):
             raise UpdateFailed(msg) from err
 
         else:
-            return {
-                "tam_list": tam_list,
-                "messages": messages,
-            }
+            return data

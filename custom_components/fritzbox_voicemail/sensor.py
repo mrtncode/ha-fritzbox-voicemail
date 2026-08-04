@@ -56,13 +56,22 @@ class FritzboxVoicemailSensor(IntegrationBlueprintEntity, SensorEntity):
         self.entity_description = entity_description
 
     @property
+    def _messages(self) -> list[dict[str, Any]]:
+        """Return messages for this TAM."""
+        all_messages = (self.coordinator.data or {}).get("messages", [])
+        return [
+            msg for msg in all_messages
+            if str(msg.get("Tam", self.tam_index)) == str(self.tam_index)
+        ]
+
+    @property
     def native_value(self) -> int:
         """Return number of voicemail messages."""
-        return len(self.coordinator.data["messages"])
+        return len(self._messages)
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return voicemail messages as attributes."""
         return {
-            "messages": self.coordinator.data["messages"],
+            "messages": self._messages,
         }
