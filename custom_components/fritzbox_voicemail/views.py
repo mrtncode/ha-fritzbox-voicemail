@@ -1,6 +1,6 @@
 """Views for audio streaming."""
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from aiohttp import web
 from custom_fritzconnection.lib.fritztam import FritzTAM
@@ -16,7 +16,7 @@ class MailboxView(HomeAssistantView):
     """View to handle requests for voicemail messages from the FritzBox."""
 
     url = "/api/mailbox/{tam_index}/{message_index}"
-    extra_urls = ["/api/mailbox/{message_index}"]
+    extra_urls: ClassVar[list[str]] = ["/api/mailbox/{message_index}"]
     name = "api:mailbox"
     requires_auth = True
 

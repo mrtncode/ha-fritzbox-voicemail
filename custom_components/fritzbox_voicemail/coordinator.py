@@ -52,7 +52,7 @@ class FritzboxVoicemailDataUpdateCoordinator(DataUpdateCoordinator):
                 for msg in messages:
                     msg["Tam"] = tam_idx
                     all_messages.append(msg)
-            except Exception as err:
+            except Exception as err:  # noqa: BLE001
                 LOGGER.warning("Could not fetch messages for TAM %s: %s", tam_idx, err)
 
         return {
@@ -63,9 +63,7 @@ class FritzboxVoicemailDataUpdateCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch data from FritzBox."""
         try:
-            data = await self.hass.async_add_executor_job(
-                self._fetch_all_tam_data
-            )
+            data = await self.hass.async_add_executor_job(self._fetch_all_tam_data)
 
         except Exception as err:
             msg = f"Failed to update data from FritzBox: {err}"

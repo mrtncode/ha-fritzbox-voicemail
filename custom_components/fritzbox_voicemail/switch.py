@@ -65,14 +65,20 @@ class FritzboxVoicemailSwitch(FritzboxVoicemailEntity, SwitchEntity):
     def is_on(self) -> bool:
         """Return true if the switch is on."""
         selected_tam = next(
-            (tam for tam in self.coordinator.data["tam_list"] if tam["Index"] == self.tam_index),
+            (
+                tam
+                for tam in self.coordinator.data["tam_list"]
+                if tam["Index"] == self.tam_index
+            ),
             None,
         )
         return selected_tam is not None and selected_tam["Enable"] == "1"
 
     async def async_turn_on(self) -> None:
         """Turn on the switch."""
-        await self.hass.async_add_executor_job(lambda: self.tam.set_enable(tam_index=self.tam_index, enable=True))
+        await self.hass.async_add_executor_job(
+            lambda: self.tam.set_enable(tam_index=self.tam_index, enable=True)
+        )
         await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self) -> None:

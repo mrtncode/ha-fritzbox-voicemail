@@ -9,7 +9,8 @@ from custom_fritzconnection import FritzConnection
 from custom_fritzconnection.lib.fritztam import FritzTAM
 from homeassistant.const import CONF_PASSWORD, CONF_URL, CONF_USERNAME, Platform
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers import config_validation as cv, entity_registry as er
+from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import entity_registry as er
 from homeassistant.loader import async_get_loaded_integration
 
 from .const import CONF_TAM_INDEX, DOMAIN
@@ -37,11 +38,13 @@ SERVICE_SCHEMA = vol.All(
 async def async_delete_voicemail_message(
     hass: HomeAssistant, service_call: ServiceCall
 ) -> None:
+    """Delete voicemail message(s) from the FritzBox."""
     delete_mode = service_call.data["delete_mode"]
     message_index = service_call.data.get("message_index")
 
     if delete_mode == "specific" and message_index is None:
-        raise HomeAssistantError("message_index is required when delete_mode is 'specific'")
+        msg = "message_index is required when delete_mode is 'specific'"
+        raise HomeAssistantError(msg)
 
     entity_ids = service_call.data.get("entity_id", [])
     if isinstance(entity_ids, str):
@@ -53,7 +56,9 @@ async def async_delete_voicemail_message(
     for entity_id in entity_ids:
         entry = ent_reg.async_get(entity_id)
         if entry and entry.config_entry_id:
-            if config_entry := hass.config_entries.async_get_entry(entry.config_entry_id):
+            if config_entry := hass.config_entries.async_get_entry(
+                entry.config_entry_id
+            ):
                 if config_entry.domain == DOMAIN:
                     target_entries.add(config_entry)
 
@@ -67,7 +72,8 @@ async def async_delete_voicemail_message(
                 target_entries.add(fallback)
 
     if not target_entries:
-        raise HomeAssistantError("No active FritzBox Voicemail integration found.")
+        msg = "No active FritzBox Voicemail integration found."
+        raise HomeAssistantError(msg)
 
     for config_entry in target_entries:
         if not (runtime_data := hass.data.get(DOMAIN, {}).get(config_entry.entry_id)):
@@ -78,22 +84,29 @@ async def async_delete_voicemail_message(
 
         if delete_mode == "specific":
             await hass.async_add_executor_job(
-                lambda: tam.delete_message(tamIndex=str(tam_index), messageIndex=message_index)
+                lambda: tam.delete_message(
+                    tamIndex=str(tam_index), messageIndex=message_index
+                )
             )
         else:
             messages = (runtime_data.coordinator.data or {}).get("messages", []) or []
-            tam_msgs = [m for m in messages if str(m.get("Tam", tam_index)) == str(tam_index)]
+            tam_msgs = [
+                m for m in messages if str(m.get("Tam", tam_index)) == str(tam_index)
+            ]
 
-            def _del_all():
+            def _del_all() -> None:
                 for m in tam_msgs:
-                    tam.delete_message(tamIndex=str(tam_index), messageIndex=(m["Index"]))
+                    tam.delete_message(
+                        tamIndex=str(tam_index), messageIndex=(m["Index"])
+                    )
 
             await hass.async_add_executor_job(_del_all)
 
         await runtime_data.coordinator.async_request_refresh()
 
 
-async def async_setup(hass: HomeAssistant, config: dict) -> bool:
+async def async_setup(hass: HomeAssistant, config: dict) -> bool:  # no-qa: ARG001
+    """Set up the FritzBox Voicemail integration."""
     hass.http.register_view(MailboxView(hass))
     hass.services.async_register(
         DOMAIN,
@@ -104,7 +117,10 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     return True
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: FritzboxVoicemailConfigEntry) -> bool:
+async def async_setup_entry(
+    hass: HomeAssistant, entry: FritzboxVoicemailConfigEntry
+) -> bool:
+    """Set up FritzBox Voicemail from a config entry."""
     fritz_connection = await hass.async_add_executor_job(
         lambda: FritzConnection(
             address=entry.data[CONF_URL],

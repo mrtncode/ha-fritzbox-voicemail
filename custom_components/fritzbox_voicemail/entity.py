@@ -20,7 +20,10 @@ class FritzboxVoicemailEntity(
         """Initialize."""
         super().__init__(coordinator)
         self.tam_index = coordinator.config_entry.data.get("tam_index", 0)
-        self._tam_name = f"Fritzbox Voicemail {coordinator.config_entry.data.get(CONF_TAM_NAME, f"TAM {self.tam_index}")}"
+        self._name = coordinator.config_entry.data.get(
+            CONF_TAM_NAME, f"TAM {self.tam_index}"
+        )
+        self._tam_name = f"Fritzbox Voicemail {self._name}"
         self._attr_unique_id = coordinator.config_entry.entry_id
         self._attr_device_info = DeviceInfo(
             identifiers={

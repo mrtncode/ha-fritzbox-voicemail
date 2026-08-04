@@ -60,7 +60,8 @@ class FritzboxVoicemailSensor(FritzboxVoicemailEntity, SensorEntity):
         """Return messages for this TAM."""
         all_messages = (self.coordinator.data or {}).get("messages", [])
         return [
-            msg for msg in all_messages
+            msg
+            for msg in all_messages
             if str(msg.get("Tam", self.tam_index)) == str(self.tam_index)
         ]
 

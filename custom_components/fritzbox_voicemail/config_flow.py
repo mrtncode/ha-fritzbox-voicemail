@@ -1,11 +1,12 @@
+"""Config flow for FritzBox Voicemail."""
+
 from __future__ import annotations
 
 from typing import Any
-import voluptuous as vol
 
+import voluptuous as vol
 from custom_fritzconnection import FritzConnection
 from custom_fritzconnection.lib.fritztam import FritzTAM
-
 from homeassistant import config_entries
 from homeassistant.const import CONF_PASSWORD, CONF_URL, CONF_USERNAME
 from homeassistant.helpers import selector
@@ -53,7 +54,9 @@ class FritzBoxVoicemailFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 {
                     vol.Required(
                         CONF_URL,
-                        default=(user_input or {}).get(CONF_URL, "http://192.168.178.1"),
+                        default=(user_input or {}).get(
+                            CONF_URL, "http://192.168.178.1"
+                        ),
                     ): selector.TextSelector(
                         selector.TextSelectorConfig(type=selector.TextSelectorType.URL)
                     ),
@@ -64,7 +67,9 @@ class FritzBoxVoicemailFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                         selector.TextSelectorConfig(type=selector.TextSelectorType.TEXT)
                     ),
                     vol.Required(CONF_PASSWORD): selector.TextSelector(
-                        selector.TextSelectorConfig(type=selector.TextSelectorType.PASSWORD)
+                        selector.TextSelectorConfig(
+                            type=selector.TextSelectorType.PASSWORD
+                        )
                     ),
                 }
             ),
@@ -80,7 +85,11 @@ class FritzBoxVoicemailFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             selected_tam_index = user_input[CONF_TAM_INDEX]
             selected_tam = next(
-                (tam for tam in self._available_tams if tam["Index"] == selected_tam_index),
+                (
+                    tam
+                    for tam in self._available_tams
+                    if tam["Index"] == selected_tam_index
+                ),
                 None,
             )
 
@@ -91,7 +100,9 @@ class FritzBoxVoicemailFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                     CONF_TAM_NAME: selected_tam["Name"],
                 }
                 # Add TAM index to the entity id to ensure uniqueness
-                await self.async_set_unique_id(f"{self._data[CONF_URL]}_tam_{selected_tam['Index']}")
+                await self.async_set_unique_id(
+                    f"{self._data[CONF_URL]}_tam_{selected_tam['Index']}"
+                )
                 self._abort_if_unique_id_configured()
 
                 return self.async_create_entry(
@@ -101,8 +112,7 @@ class FritzBoxVoicemailFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
         tam_options = [
             selector.SelectOptionDict(
-                value=tam["Index"],
-                label=f"{tam['Name']} (Index {tam['Index']})"
+                value=tam["Index"], label=f"{tam['Name']} (Index {tam['Index']})"
             )
             for tam in self._available_tams
         ]
@@ -138,10 +148,11 @@ class FritzBoxVoicemailFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             tams = await self.hass.async_add_executor_job(tam.tam_list)
 
             valid_tams = [
-                tam_item for tam_item in tams
-                if tam_item.get("Name") is not None
+                tam_item for tam_item in tams if tam_item.get("Name") is not None
             ]
             return True, valid_tams
         except Exception as exception:  # noqa: BLE001
-            LOGGER.exception("Unexpected error during authentication/TAM retrieval: %s", exception)
+            LOGGER.exception(
+                "Unexpected error during authentication/TAM retrieval: %s", exception
+            )
             return False, []
