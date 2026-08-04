@@ -9,10 +9,10 @@ from custom_fritzconnection import FritzConnection
 from custom_fritzconnection.lib.fritztam import FritzTAM
 from homeassistant.const import CONF_PASSWORD, CONF_URL, CONF_USERNAME, Platform
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import config_validation as cv, entity_registry as er
 from homeassistant.loader import async_get_loaded_integration
 
-from .const import DOMAIN
+from .const import CONF_TAM_INDEX, DOMAIN
 from .coordinator import FritzboxVoicemailDataUpdateCoordinator
 from .data import FritzboxVoicemailConfigEntry, FritzboxVoicemailData
 from .views import MailboxView
@@ -21,80 +21,90 @@ if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant, ServiceCall
 
 PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.SWITCH]
-
 CONFIG_SCHEMA = cv.empty_config_schema(DOMAIN)
-
 SERVICE_DELETE_VOICEMAIL_MESSAGE = "delete_voicemail_message"
 
-SERVICE_SCHEMA = vol.Schema(
-    {
-        vol.Required("delete_mode"): vol.In(["all", "specific"]),
-        vol.Optional("message_index"): cv.positive_int,
-    }
+SERVICE_SCHEMA = vol.All(
+    cv.make_entity_service_schema(
+        {
+            vol.Required("delete_mode"): vol.In(["all", "specific"]),
+            vol.Optional("message_index"): cv.positive_int,
+        }
+    )
 )
 
 
 async def async_delete_voicemail_message(
-    hass: HomeAssistant,
-    service_call: ServiceCall,
+    hass: HomeAssistant, service_call: ServiceCall
 ) -> None:
-    """Delete voicemail messages from the FritzBox."""
-    runtime_data = next(iter(hass.data.get(DOMAIN, {}).values()), None)
-
-    if runtime_data is None:
-        msg = "FritzBox Voicemail is not set up. Please set up the integration first."
-        raise HomeAssistantError(msg)
-
-    fritz_connection = runtime_data.client
-    tam = FritzTAM(fc=fritz_connection)
     delete_mode = service_call.data["delete_mode"]
+    message_index = service_call.data.get("message_index")
 
-    if delete_mode == "specific":
-        message_index = service_call.data.get("message_index")
-        if message_index is None:
-            msg = "message_index is required when delete_mode is specific"
-            raise HomeAssistantError(msg)
+    if delete_mode == "specific" and message_index is None:
+        raise HomeAssistantError("message_index is required when delete_mode is 'specific'")
 
-        await hass.async_add_executor_job(
-            lambda: tam.delete_message(messageIndex=message_index)
-        )
-    else:
-        messages = (runtime_data.coordinator.data or {}).get("messages", []) or []
-        for message in messages:
+    entity_ids = service_call.data.get("entity_id", [])
+    if isinstance(entity_ids, str):
+        entity_ids = [entity_ids]
+
+    ent_reg = er.async_get(hass)
+    target_entries: set[FritzboxVoicemailConfigEntry] = set()
+
+    for entity_id in entity_ids:
+        entry = ent_reg.async_get(entity_id)
+        if entry and entry.config_entry_id:
+            if config_entry := hass.config_entries.async_get_entry(entry.config_entry_id):
+                if config_entry.domain == DOMAIN:
+                    target_entries.add(config_entry)
+
+    if not target_entries:
+        for entry in hass.config_entries.async_entries(DOMAIN):
+            if int(entry.data.get(CONF_TAM_INDEX, 0)) == 0:
+                target_entries.add(entry)
+                break
+        if not target_entries:
+            if fallback := next(iter(hass.config_entries.async_entries(DOMAIN)), None):
+                target_entries.add(fallback)
+
+    if not target_entries:
+        raise HomeAssistantError("No active FritzBox Voicemail integration found.")
+
+    for config_entry in target_entries:
+        if not (runtime_data := hass.data.get(DOMAIN, {}).get(config_entry.entry_id)):
+            continue
+
+        tam = FritzTAM(fc=runtime_data.client)
+        tam_index = int(config_entry.data.get(CONF_TAM_INDEX, 0))
+
+        if delete_mode == "specific":
             await hass.async_add_executor_job(
-                lambda index=int(message["Index"]): tam.delete_message(
-                    messageIndex=index
-                )
+                lambda: tam.delete_message(idx=tam_index, index=int(message_index))
             )
+        else:
+            messages = (runtime_data.coordinator.data or {}).get("messages", []) or []
+            tam_msgs = [m for m in messages if str(m.get("Tam", tam_index)) == str(tam_index)]
 
-    await runtime_data.coordinator.async_request_refresh()
+            def _del_all():
+                for m in tam_msgs:
+                    tam.delete_message(idx=tam_index, index=int(m["Index"]))
+
+            await hass.async_add_executor_job(_del_all)
+
+        await runtime_data.coordinator.async_request_refresh()
 
 
-async def async_setup(
-    hass: HomeAssistant,
-    config: dict,  # noqa: ARG001
-) -> bool:
-    """Set up integration."""
+async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     hass.http.register_view(MailboxView(hass))
-
-    async def handle_delete_voicemail_message(service_call: ServiceCall) -> None:
-        await async_delete_voicemail_message(hass, service_call)
-
     hass.services.async_register(
         DOMAIN,
         SERVICE_DELETE_VOICEMAIL_MESSAGE,
-        handle_delete_voicemail_message,
+        lambda call: async_delete_voicemail_message(hass, call),
         schema=SERVICE_SCHEMA,
     )
-
     return True
 
 
-async def async_setup_entry(
-    hass: HomeAssistant,
-    entry: FritzboxVoicemailConfigEntry,
-) -> bool:
-    """Set up integration from config entry."""
+async def async_setup_entry(hass: HomeAssistant, entry: FritzboxVoicemailConfigEntry) -> bool:
     fritz_connection = await hass.async_add_executor_job(
         lambda: FritzConnection(
             address=entry.data[CONF_URL],
@@ -103,20 +113,13 @@ async def async_setup_entry(
         )
     )
 
-    coordinator = FritzboxVoicemailDataUpdateCoordinator(
-        hass,
-        fritz_connection,
-    )
-
+    coordinator = FritzboxVoicemailDataUpdateCoordinator(hass, fritz_connection)
     await coordinator.async_config_entry_first_refresh()
 
     entry.runtime_data = FritzboxVoicemailData(
         client=fritz_connection,
         coordinator=coordinator,
-        integration=async_get_loaded_integration(
-            hass,
-            entry.domain,
-        ),
+        integration=async_get_loaded_integration(hass, entry.domain),
     )
 
     hass.data.setdefault(DOMAIN, {})
@@ -146,7 +149,6 @@ async def async_unload_entry(
 
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id, None)
-
     return unload_ok
 
 
