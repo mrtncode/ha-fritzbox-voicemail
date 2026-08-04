@@ -1,4 +1,4 @@
-"""Switch platform for integration_blueprint."""
+"""Switch platform for Fritzbox Voicemail."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from custom_components.fritzbox_voicemail.data import FritzboxVoicemailConfigEntry
 
 from .const import DOMAIN
-from .entity import IntegrationBlueprintEntity
+from .entity import FritzboxVoicemailEntity
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -44,7 +44,7 @@ async def async_setup_entry(
     )
 
 
-class FritzboxVoicemailSwitch(IntegrationBlueprintEntity, SwitchEntity):
+class FritzboxVoicemailSwitch(FritzboxVoicemailEntity, SwitchEntity):
     """fritzbox_voicemail switch class."""
 
     def __init__(

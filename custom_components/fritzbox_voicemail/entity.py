@@ -1,4 +1,4 @@
-"""BlueprintEntity class."""
+"""Entity class."""
 
 from __future__ import annotations
 
@@ -9,10 +9,10 @@ from .const import ATTRIBUTION, CONF_TAM_NAME
 from .coordinator import FritzboxVoicemailDataUpdateCoordinator
 
 
-class IntegrationBlueprintEntity(
+class FritzboxVoicemailEntity(
     CoordinatorEntity[FritzboxVoicemailDataUpdateCoordinator]
 ):
-    """BlueprintEntity class."""
+    """Fritzbox Voicemail entity class."""
 
     _attr_attribution = ATTRIBUTION
 

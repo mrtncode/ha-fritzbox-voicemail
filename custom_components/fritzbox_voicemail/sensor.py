@@ -9,7 +9,7 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
 )
 
-from .entity import IntegrationBlueprintEntity
+from .entity import FritzboxVoicemailEntity
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -43,7 +43,7 @@ async def async_setup_entry(
     )
 
 
-class FritzboxVoicemailSensor(IntegrationBlueprintEntity, SensorEntity):
+class FritzboxVoicemailSensor(FritzboxVoicemailEntity, SensorEntity):
     """Fritzbox Voicemail sensor."""
 
     def __init__(
