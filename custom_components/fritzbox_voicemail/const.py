@@ -6,3 +6,5 @@ LOGGER: Logger = getLogger(__package__)
 
 DOMAIN = "fritzbox_voicemail"
 ATTRIBUTION = "Data provided by FritzBox"
+
+CONF_TAM_NAME = "tam_name"
