@@ -35,6 +35,36 @@ SERVICE_SCHEMA = vol.All(
 )
 
 
+def _get_target_entries(
+    hass: HomeAssistant, entity_ids: list[str]
+) -> set[tuple[FritzboxVoicemailConfigEntry, int]]:
+    """Sucht die passenden FritzBox Config-Entries und den zugehörigen TAM-Index."""
+    target_entries: set[tuple[FritzboxVoicemailConfigEntry, int]] = set()
+    ent_reg = er.async_get(hass)
+
+    for entity_id in entity_ids:
+        entry = ent_reg.async_get(entity_id)
+        if (
+            entry
+            and entry.config_entry_id
+            and (
+                config_entry := hass.config_entries.async_get_entry(
+                    entry.config_entry_id
+                )
+            )
+            and config_entry.domain == DOMAIN
+        ):
+            idx = int(config_entry.data.get(CONF_TAM_INDEX, 0))
+            target_entries.add((config_entry, idx))
+
+    if not target_entries and (
+        fallback := next(iter(hass.config_entries.async_entries(DOMAIN)), None)
+    ):
+        target_entries.add((fallback, 0))
+
+    return target_entries
+
+
 async def async_delete_message(hass: HomeAssistant, service_call: ServiceCall) -> None:
     """Delete voicemail message(s) from the FritzBox."""
     delete_mode = service_call.data["delete_mode"]
@@ -48,44 +78,17 @@ async def async_delete_message(hass: HomeAssistant, service_call: ServiceCall) -
     if isinstance(entity_ids, str):
         entity_ids = [entity_ids]
 
-    ent_reg = er.async_get(hass)
-    target_entries: set[FritzboxVoicemailConfigEntry] = set()
-
-    for entity_id in entity_ids:
-        entry = ent_reg.async_get(entity_id)
-
-        if (
-            entry
-            and entry.config_entry_id
-            and (
-                config_entry := hass.config_entries.async_get_entry(
-                    entry.config_entry_id
-                )
-            )
-            and config_entry.domain == DOMAIN
-        ):
-            target_entries.add(hass.data[DOMAIN][entry.config_entry_id])
-
-    if not target_entries:
-        for entry in hass.config_entries.async_entries(DOMAIN):
-            if int(entry.data.get(CONF_TAM_INDEX, 0)) == 0:
-                target_entries.add(entry)
-                break
-        if not target_entries and (
-            fallback := next(iter(hass.config_entries.async_entries(DOMAIN)), None)
-        ):
-            target_entries.add(fallback)
+    target_entries = _get_target_entries(hass, entity_ids)
 
     if not target_entries:
         msg = "No active FritzBox Voicemail integration found."
         raise HomeAssistantError(msg)
 
-    for config_entry in target_entries:
+    for config_entry, tam_index in target_entries:
         if not (runtime_data := hass.data.get(DOMAIN, {}).get(config_entry.entry_id)):
             continue
 
         tam = FritzTAM(fc=runtime_data.client)
-        tam_index = int(config_entry.data.get(CONF_TAM_INDEX, 0))
 
         if delete_mode == "specific":
             await hass.async_add_executor_job(
