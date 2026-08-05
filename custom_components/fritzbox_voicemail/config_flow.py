@@ -99,8 +99,12 @@ class FritzBoxVoicemailFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 CONF_TAMS: selected_tams,
             }
 
+            displayed_url = (
+                self._data[CONF_URL].replace("http://", "").replace("https://", "")
+            )
+
             return self.async_create_entry(
-                title=f"Fritz!Box ({self._data[CONF_URL]})",
+                title=f"Fritz!Box ({displayed_url})",
                 data=final_data,
             )
 
