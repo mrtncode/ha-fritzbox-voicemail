@@ -11,7 +11,7 @@ from homeassistant.helpers.update_coordinator import (
     UpdateFailed,
 )
 
-from .const import DOMAIN, LOGGER
+from .const import CONF_TAMS, DOMAIN, LOGGER
 
 if TYPE_CHECKING:
     from custom_fritzconnection.core.fritzconnection import FritzConnection
@@ -40,23 +40,34 @@ class FritzboxVoicemailDataUpdateCoordinator(DataUpdateCoordinator):
             update_interval=timedelta(minutes=1),
         )
 
+    def _fetch_all_tam_data(self) -> dict[str, Any]:
+        """Fetch TAM list and messages for all configured TAMs (multi-TAM support)."""
+        tam_list = self.tam.tam_list()
+        all_messages: list[dict[str, Any]] = []
+
+        configured_tams = self.config_entry.data.get(CONF_TAMS, [])
+        target_indices = [str(tam["index"]) for tam in configured_tams] or [
+            str(t.get("Index", 0)) for t in tam_list
+        ]
+
+        for tam_idx in target_indices:
+            try:
+                messages = self.tam.message_list(tamIndex=str(tam_idx))
+                for msg in messages:
+                    msg["Tam"] = tam_idx
+                    all_messages.append(msg)
+            except Exception as err:  # noqa: BLE001
+                LOGGER.warning("Could not fetch messages for TAM %s: %s", tam_idx, err)
+
+        return {
+            "tam_list": tam_list,
+            "messages": all_messages,
+        }
+
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch data from FritzBox."""
         try:
-            tam_list = await self.hass.async_add_executor_job(
-                self.tam.tam_list,
-            )
-
-            messages = await self.hass.async_add_executor_job(
-                self.tam.message_list,
-            )
-
+            return await self.hass.async_add_executor_job(self._fetch_all_tam_data)
         except Exception as err:
             msg = f"Failed to update data from FritzBox: {err}"
             raise UpdateFailed(msg) from err
-
-        else:
-            return {
-                "tam_list": tam_list,
-                "messages": messages,
-            }

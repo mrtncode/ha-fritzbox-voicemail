@@ -9,7 +9,8 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
 )
 
-from .entity import IntegrationBlueprintEntity
+from .const import CONF_TAMS
+from .entity import FritzboxVoicemailEntity
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -38,31 +39,47 @@ async def async_setup_entry(
         FritzboxVoicemailSensor(
             coordinator=entry.runtime_data.coordinator,
             entity_description=entity_description,
+            tam_index=tam["index"],
+            tam_name=tam["name"],
         )
+        for tam in entry.data.get(CONF_TAMS, [])
         for entity_description in ENTITY_DESCRIPTIONS
     )
 
 
-class FritzboxVoicemailSensor(IntegrationBlueprintEntity, SensorEntity):
+class FritzboxVoicemailSensor(FritzboxVoicemailEntity, SensorEntity):
     """Fritzbox Voicemail sensor."""
 
     def __init__(
         self,
         coordinator: FritzboxVoicemailDataUpdateCoordinator,
         entity_description: SensorEntityDescription,
+        tam_index: str,
+        tam_name: str,
     ) -> None:
         """Initialize sensor."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, tam_index=tam_index, tam_name=tam_name)
         self.entity_description = entity_description
+        self._attr_unique_id = f"{self._attr_unique_id}_{entity_description.key}"
+
+    @property
+    def _messages(self) -> list[dict[str, Any]]:
+        """Return messages for this TAM."""
+        all_messages = (self.coordinator.data or {}).get("messages", [])
+        return [
+            msg
+            for msg in all_messages
+            if str(msg.get("Tam", self.tam_index)) == str(self.tam_index)
+        ]
 
     @property
     def native_value(self) -> int:
         """Return number of voicemail messages."""
-        return len(self.coordinator.data["messages"])
+        return len(self._messages)
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return voicemail messages as attributes."""
         return {
-            "messages": self.coordinator.data["messages"],
+            "messages": self._messages,
         }
