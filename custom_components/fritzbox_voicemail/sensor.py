@@ -9,6 +9,7 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
 )
 
+from .const import CONF_TAMS
 from .entity import FritzboxVoicemailEntity
 
 if TYPE_CHECKING:
@@ -38,7 +39,10 @@ async def async_setup_entry(
         FritzboxVoicemailSensor(
             coordinator=entry.runtime_data.coordinator,
             entity_description=entity_description,
+            tam_index=tam["index"],
+            tam_name=tam["name"],
         )
+        for tam in entry.data.get(CONF_TAMS, [])
         for entity_description in ENTITY_DESCRIPTIONS
     )
 
@@ -50,10 +54,13 @@ class FritzboxVoicemailSensor(FritzboxVoicemailEntity, SensorEntity):
         self,
         coordinator: FritzboxVoicemailDataUpdateCoordinator,
         entity_description: SensorEntityDescription,
+        tam_index: str,
+        tam_name: str,
     ) -> None:
         """Initialize sensor."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, tam_index=tam_index, tam_name=tam_name)
         self.entity_description = entity_description
+        self._attr_unique_id = f"{self._attr_unique_id}_{entity_description.key}"
 
     @property
     def _messages(self) -> list[dict[str, Any]]:

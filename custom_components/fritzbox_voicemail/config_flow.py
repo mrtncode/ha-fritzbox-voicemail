@@ -13,12 +13,11 @@ from homeassistant.helpers import selector
 
 from .const import DOMAIN, LOGGER
 
-CONF_TAM_INDEX = "tam_index"
-CONF_TAM_NAME = "tam_name"
+CONF_TAMS = "tams"
 
 
 class FritzBoxVoicemailFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
-    """Config flow for FritzBox Voicemail."""
+    """Config flow for FritzBox Voicemail Hub."""
 
     VERSION = 1
 
@@ -35,6 +34,9 @@ class FritzBoxVoicemailFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         _errors: dict[str, str] = {}
 
         if user_input is not None:
+            await self.async_set_unique_id(user_input[CONF_URL])
+            self._abort_if_unique_id_configured()
+
             success, available_tams = await self._test_credentials_and_get_tams(
                 address=user_input[CONF_URL],
                 username=user_input[CONF_USERNAME],
@@ -79,40 +81,32 @@ class FritzBoxVoicemailFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_tam_selection(
         self, user_input: dict[str, Any] | None = None
     ) -> config_entries.ConfigFlowResult:
-        """Handle selection of the specific TAM."""
+        """Handle selection of multiple TAMs."""
         _errors: dict[str, str] = {}
 
         if user_input is not None:
-            selected_tam_index = user_input[CONF_TAM_INDEX]
-            selected_tam = next(
-                (
-                    tam
-                    for tam in self._available_tams
-                    if tam["Index"] == selected_tam_index
-                ),
-                None,
+            selected_indices = user_input[CONF_TAMS]
+
+            selected_tams = [
+                {"index": tam["Index"], "name": tam["Name"]}
+                for tam in self._available_tams
+                if str(tam["Index"]) in selected_indices
+                or tam["Index"] in selected_indices
+            ]
+
+            final_data = {
+                **self._data,
+                CONF_TAMS: selected_tams,
+            }
+
+            return self.async_create_entry(
+                title=f"Fritz!Box ({self._data[CONF_URL]})",
+                data=final_data,
             )
-
-            if selected_tam:
-                final_data = {
-                    **self._data,
-                    CONF_TAM_INDEX: selected_tam["Index"],
-                    CONF_TAM_NAME: selected_tam["Name"],
-                }
-                # Add TAM index to the entity id to ensure uniqueness
-                await self.async_set_unique_id(
-                    f"{self._data[CONF_URL]}_tam_{selected_tam['Index']}"
-                )
-                self._abort_if_unique_id_configured()
-
-                return self.async_create_entry(
-                    title=f"Fritz!Box TAM: {selected_tam['Name']}",
-                    data=final_data,
-                )
 
         tam_options = [
             selector.SelectOptionDict(
-                value=tam["Index"], label=f"{tam['Name']} (Index {tam['Index']})"
+                value=str(tam["Index"]), label=f"{tam['Name']} (Index {tam['Index']})"
             )
             for tam in self._available_tams
         ]
@@ -121,9 +115,13 @@ class FritzBoxVoicemailFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="tam_selection",
             data_schema=vol.Schema(
                 {
-                    vol.Required(CONF_TAM_INDEX): selector.SelectSelector(
+                    vol.Required(
+                        CONF_TAMS,
+                        default=[str(tam["Index"]) for tam in self._available_tams],
+                    ): selector.SelectSelector(
                         selector.SelectSelectorConfig(
                             options=tam_options,
+                            multiple=True,
                             mode=selector.SelectSelectorMode.DROPDOWN,
                         )
                     ),

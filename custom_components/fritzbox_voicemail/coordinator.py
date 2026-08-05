@@ -11,7 +11,7 @@ from homeassistant.helpers.update_coordinator import (
     UpdateFailed,
 )
 
-from .const import DOMAIN, LOGGER
+from .const import CONF_TAMS, DOMAIN, LOGGER
 
 if TYPE_CHECKING:
     from custom_fritzconnection.core.fritzconnection import FritzConnection
@@ -45,8 +45,12 @@ class FritzboxVoicemailDataUpdateCoordinator(DataUpdateCoordinator):
         tam_list = self.tam.tam_list()
         all_messages: list[dict[str, Any]] = []
 
-        for tam_info in tam_list:
-            tam_idx = int(tam_info.get("Index", 0))
+        configured_tams = self.config_entry.data.get(CONF_TAMS, [])
+        target_indices = [str(tam["index"]) for tam in configured_tams] or [
+            str(t.get("Index", 0)) for t in tam_list
+        ]
+
+        for tam_idx in target_indices:
             try:
                 messages = self.tam.message_list(tamIndex=str(tam_idx))
                 for msg in messages:
@@ -63,11 +67,7 @@ class FritzboxVoicemailDataUpdateCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch data from FritzBox."""
         try:
-            data = await self.hass.async_add_executor_job(self._fetch_all_tam_data)
-
+            return await self.hass.async_add_executor_job(self._fetch_all_tam_data)
         except Exception as err:
             msg = f"Failed to update data from FritzBox: {err}"
             raise UpdateFailed(msg) from err
-
-        else:
-            return data
