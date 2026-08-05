@@ -150,9 +150,10 @@ class FritzBoxVoicemailFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             valid_tams = [
                 tam_item for tam_item in tams if tam_item.get("Name") is not None
             ]
-            return True, valid_tams
         except Exception as exception:  # noqa: BLE001
             LOGGER.exception(
                 "Unexpected error during authentication/TAM retrieval: %s", exception
             )
             return False, []
+        else:
+            return True, valid_tams

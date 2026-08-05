@@ -35,9 +35,7 @@ SERVICE_SCHEMA = vol.All(
 )
 
 
-async def async_delete_voicemail_message(
-    hass: HomeAssistant, service_call: ServiceCall
-) -> None:
+async def async_delete_message(hass: HomeAssistant, service_call: ServiceCall) -> None:
     """Delete voicemail message(s) from the FritzBox."""
     delete_mode = service_call.data["delete_mode"]
     message_index = service_call.data.get("message_index")
@@ -55,21 +53,28 @@ async def async_delete_voicemail_message(
 
     for entity_id in entity_ids:
         entry = ent_reg.async_get(entity_id)
-        if entry and entry.config_entry_id:
-            if config_entry := hass.config_entries.async_get_entry(
-                entry.config_entry_id
-            ):
-                if config_entry.domain == DOMAIN:
-                    target_entries.add(config_entry)
+
+        if (
+            entry
+            and entry.config_entry_id
+            and (
+                config_entry := hass.config_entries.async_get_entry(
+                    entry.config_entry_id
+                )
+            )
+            and config_entry.domain == DOMAIN
+        ):
+            target_entries.add(hass.data[DOMAIN][entry.config_entry_id])
 
     if not target_entries:
         for entry in hass.config_entries.async_entries(DOMAIN):
             if int(entry.data.get(CONF_TAM_INDEX, 0)) == 0:
                 target_entries.add(entry)
                 break
-        if not target_entries:
-            if fallback := next(iter(hass.config_entries.async_entries(DOMAIN)), None):
-                target_entries.add(fallback)
+        if not target_entries and (
+            fallback := next(iter(hass.config_entries.async_entries(DOMAIN)), None)
+        ):
+            target_entries.add(fallback)
 
     if not target_entries:
         msg = "No active FritzBox Voicemail integration found."
@@ -84,8 +89,10 @@ async def async_delete_voicemail_message(
 
         if delete_mode == "specific":
             await hass.async_add_executor_job(
-                lambda: tam.delete_message(
-                    tamIndex=str(tam_index), messageIndex=message_index
+                lambda tam=tam, tam_index=tam_index, message_index=message_index: (
+                    tam.delete_message(
+                        tamIndex=str(tam_index), messageIndex=message_index
+                    )
                 )
             )
         else:
@@ -94,7 +101,11 @@ async def async_delete_voicemail_message(
                 m for m in messages if str(m.get("Tam", tam_index)) == str(tam_index)
             ]
 
-            def _del_all() -> None:
+            def _del_all(
+                tam: FritzTAM = tam,
+                tam_index: int = tam_index,
+                tam_msgs: list = tam_msgs,
+            ) -> None:
                 for m in tam_msgs:
                     tam.delete_message(
                         tamIndex=str(tam_index), messageIndex=(m["Index"])
@@ -105,13 +116,13 @@ async def async_delete_voicemail_message(
         await runtime_data.coordinator.async_request_refresh()
 
 
-async def async_setup(hass: HomeAssistant, config: dict) -> bool:  # no-qa: ARG001
+async def async_setup(hass: HomeAssistant, config: dict) -> bool:  # noqa: ARG001
     """Set up the FritzBox Voicemail integration."""
     hass.http.register_view(MailboxView(hass))
     hass.services.async_register(
         DOMAIN,
         SERVICE_DELETE_VOICEMAIL_MESSAGE,
-        lambda call: async_delete_voicemail_message(hass, call),
+        lambda call: async_delete_message(hass, call),
         schema=SERVICE_SCHEMA,
     )
     return True
