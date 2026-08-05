@@ -1,32 +1,46 @@
-"""BlueprintEntity class."""
+"""Entity class for Fritzbox Voicemail."""
 
 from __future__ import annotations
 
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import ATTRIBUTION
+from .const import ATTRIBUTION, DOMAIN
 from .coordinator import FritzboxVoicemailDataUpdateCoordinator
 
 
-class IntegrationBlueprintEntity(
+class FritzboxVoicemailEntity(
     CoordinatorEntity[FritzboxVoicemailDataUpdateCoordinator]
 ):
-    """BlueprintEntity class."""
+    """Fritzbox Voicemail entity class."""
 
     _attr_attribution = ATTRIBUTION
+    _attr_has_entity_name = True
 
-    def __init__(self, coordinator: FritzboxVoicemailDataUpdateCoordinator) -> None:
+    def __init__(
+        self,
+        coordinator: FritzboxVoicemailDataUpdateCoordinator,
+        tam_index: str,
+        tam_name: str | None = None,
+    ) -> None:
         """Initialize."""
         super().__init__(coordinator)
-        self._tam_name = "Fritzbox Voicemail"
-        self._attr_unique_id = coordinator.config_entry.entry_id
+        self.tam_index = tam_index
+        name = tam_name or f"TAM {tam_index}"
+
+        self._tam_suffix = "" if int(tam_index) == 0 else f" TAM {tam_index}"
+        self._attr_unique_id = f"{coordinator.config_entry.entry_id}_tam_{tam_index}"
+
         self._attr_device_info = DeviceInfo(
             identifiers={
                 (
-                    coordinator.config_entry.domain,
-                    coordinator.config_entry.entry_id,
+                    DOMAIN,
+                    f"{coordinator.config_entry.entry_id}{self._tam_suffix}",
                 ),
             },
-            name=self._tam_name,
+            name=f"Fritz!Box Voicemail: {name}",
+            via_device=(
+                DOMAIN,
+                coordinator.config_entry.entry_id,
+            ),
         )
