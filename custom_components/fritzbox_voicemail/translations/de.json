@@ -7,6 +7,11 @@
                     "username": "Benutzername",
                     "password": "Passwort"
                 }
+            },
+            "tam_selection": {
+                "data": {
+                    "tams": "Voicemail hinzufügen"
+                }
             }
         },
         "error": {
