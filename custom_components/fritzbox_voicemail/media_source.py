@@ -45,16 +45,18 @@ class MailboxMediaSource(media_source.MediaSource):
             if tam_idx is None:
                 tam_idx = 0
 
+            title = str(msg["Number"]) if msg.get("Number") else "Unknown"
+            if msg.get("Name"):
+                title += " - " + msg["Name"]
+            title += " - " + msg["Date"]
+
             children.append(
                 media_source.BrowseMediaSource(
                     domain=DOMAIN,
                     identifier=f"{tam_idx}/{msg['Index']}",
                     media_class=MediaClass.MUSIC,
                     media_content_type="audio/wav",
-                    title=msg["Number"]
-                    + " - "
-                    + msg["Date"]
-                    + (" - " + msg["Name"] if msg.get("Name") else ""),
+                    title=title,
                     can_play=True,
                     can_expand=False,
                 )
