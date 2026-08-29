@@ -42,18 +42,22 @@ class FritzBoxVoicemailFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             await self.async_set_unique_id(user_input[CONF_URL])
             self._abort_if_unique_id_configured()
 
-            success, available_tams = await self._test_credentials_and_get_tams(
+            error, available_tams = await self._test_credentials_and_get_tams(
                 address=user_input[CONF_URL],
                 username=user_input[CONF_USERNAME],
                 password=user_input[CONF_PASSWORD],
             )
 
-            if success and available_tams:
+            if error is None and available_tams:
                 self._data = user_input
                 self._available_tams = available_tams
                 return await self.async_step_tam_selection()
 
-            _errors["base"] = "auth" if not success else "no_tams_found"
+            LOGGER.error(
+                "Error during authentication/TAM retrieval: %s",
+                error,
+            )
+            _errors["base"] = "auth" if not error else "no_tams_found"
 
         return self.async_show_form(
             step_id="user",
@@ -159,13 +163,13 @@ class FritzBoxVoicemailFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_abort(reason="unknown")
 
         if user_input is not None:
-            success, _ = await self._test_credentials_and_get_tams(
+            error, _ = await self._test_credentials_and_get_tams(
                 address=self._reauth_entry.data[CONF_URL],
                 username=self._reauth_entry.data[CONF_USERNAME],
                 password=user_input[CONF_PASSWORD],
             )
 
-            if success:
+            if error is None:
                 new_data = {
                     **self._reauth_entry.data,
                     CONF_PASSWORD: user_input[CONF_PASSWORD],
@@ -178,6 +182,7 @@ class FritzBoxVoicemailFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 await self.hass.config_entries.async_reload(self._reauth_entry.entry_id)
                 return self.async_abort(reason="reauth_successful")
 
+            LOGGER.error("Reauthorization failed.")
             _errors["base"] = "auth"
 
         return self.async_show_form(
@@ -216,7 +221,11 @@ class FritzBoxVoicemailFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             if not valid_tams:
                 return "no_tams", []
 
-        except FritzSecurityError:
+        except FritzSecurityError as exception:
+            LOGGER.error(
+                "FRITZ!Box authentication/security error: %s",
+                exception,
+            )
             return "auth", []
         except FritzConnectionException:
             return "connection", []
