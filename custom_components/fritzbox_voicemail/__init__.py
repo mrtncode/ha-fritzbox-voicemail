@@ -10,6 +10,7 @@ from custom_fritzconnection.lib.fritztam import FritzTAM
 from homeassistant.const import CONF_PASSWORD, CONF_URL, CONF_USERNAME, Platform
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.loader import async_get_loaded_integration
 
@@ -56,11 +57,6 @@ def _get_target_entries(
         ):
             idx = int(config_entry.data.get(CONF_TAM_INDEX, 0))
             target_entries.add((config_entry, idx))
-
-    if not target_entries and (
-        fallback := next(iter(hass.config_entries.async_entries(DOMAIN)), None)
-    ):
-        target_entries.add((fallback, 0))
 
     return target_entries
 
@@ -155,7 +151,15 @@ async def async_setup_entry(
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = entry.runtime_data
 
-    hass.http.register_view(MailboxView(hass))
+    # register fritzbox as Hub
+    device_reg = dr.async_get(hass)
+    device_reg.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers={(DOMAIN, entry.entry_id)},
+        name=entry.title or "FRITZ!Box Voicemail",
+        manufacturer="AVM",
+        model="FRITZ!Box",
+    )
 
     await hass.config_entries.async_forward_entry_setups(
         entry,
