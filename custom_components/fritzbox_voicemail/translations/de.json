@@ -17,7 +17,8 @@
         "error": {
             "auth": "Benutzername/Passwort ist falsch.",
             "connection": "Verbindung zum Server nicht möglich.",
-            "unknown": "Ein unbekannter Fehler ist aufgetreten."
+            "unknown": "Ein unbekannter Fehler ist aufgetreten.",
+            "no_tams_found": "Keine Anrufbeantworter gefunden. Bitte überprüfen Sie Ihre Fritz!Box-Einstellungen."
         },
         "abort": {
             "already_configured": "Dieser Eintrag ist bereits konfiguriert."
