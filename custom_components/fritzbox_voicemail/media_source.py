@@ -10,6 +10,7 @@ from homeassistant.components.media_player.const import MediaClass
 from .const import DOMAIN
 
 if TYPE_CHECKING:
+    from homeassistant.components.media_source.models import MediaSourceItem
     from homeassistant.core import HomeAssistant
 
 
@@ -29,38 +30,40 @@ class MailboxMediaSource(media_source.MediaSource):
 
     async def async_browse_media(
         self,
-        item: media_source.MediaSourceItem,  # noqa: ARG002
+        item: MediaSourceItem,  # noqa: ARG002
     ) -> media_source.BrowseMediaSource:
         """Browse media items."""
-        runtime_data = next(iter(self.hass.data[DOMAIN].values()))
-        messages = (
-            runtime_data.coordinator.data.get("messages", [])
-            if runtime_data.coordinator.data
-            else []
-        )
-
+        entries = self.hass.data.get(DOMAIN, {})
         children = []
-        for msg in messages:
-            tam_idx = msg.get("Tam")
-            if tam_idx is None:
-                tam_idx = 0
 
-            title = str(msg["Number"]) if msg.get("Number") else "Unknown"
-            if msg.get("Name"):
-                title += " - " + msg["Name"]
-            title += " - " + msg["Date"]
-
-            children.append(
-                media_source.BrowseMediaSource(
-                    domain=DOMAIN,
-                    identifier=f"{tam_idx}/{msg['Index']}",
-                    media_class=MediaClass.MUSIC,
-                    media_content_type="audio/wav",
-                    title=title,
-                    can_play=True,
-                    can_expand=False,
-                )
+        # Run for every fritzbox
+        for entry_id, runtime_data in entries.items():
+            messages = (
+                runtime_data.coordinator.data.get("messages", [])
+                if runtime_data.coordinator.data
+                else []
             )
+
+            for msg in messages:
+                tam_idx = msg.get("Tam", 0)
+
+                title = str(msg["Number"]) if msg.get("Number") else "Unknown"
+                if msg.get("Name"):
+                    title += " - " + msg["Name"]
+                if msg.get("Date"):
+                    title += " - " + msg["Date"]
+
+                children.append(
+                    media_source.BrowseMediaSource(
+                        domain=DOMAIN,
+                        identifier=f"{entry_id}/{tam_idx}/{msg['Index']}",
+                        media_class=MediaClass.MUSIC,
+                        media_content_type="audio/wav",
+                        title=title,
+                        can_play=True,
+                        can_expand=False,
+                    )
+                )
 
         return media_source.BrowseMediaSource(
             domain=DOMAIN,
@@ -74,10 +77,22 @@ class MailboxMediaSource(media_source.MediaSource):
         )
 
     async def async_resolve_media(
-        self, item: media_source.MediaSourceItem
+        self, item: MediaSourceItem
     ) -> media_source.PlayMedia:
         """Resolve media item to a playable URL."""
+        parts = item.identifier.split("/")
+        min_parts = 3
+        if len(parts) < min_parts:
+            e = "Invalid media identifier"
+            raise media_source.Unresolvable(e)
+
+        entry_id, tam_idx, msg_idx = parts[0], parts[1], parts[2]
+
+        if DOMAIN not in self.hass.data or entry_id not in self.hass.data[DOMAIN]:
+            e = f"FritzBox entry {entry_id} not found"
+            raise media_source.Unresolvable(e)
+
         return media_source.PlayMedia(
-            url=f"/api/mailbox/{item.identifier}",
+            url=f"/api/mailbox/{entry_id}/{tam_idx}/{msg_idx}",
             mime_type="audio/wav",
         )
