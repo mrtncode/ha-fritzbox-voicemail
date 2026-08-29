@@ -6,6 +6,10 @@ from typing import Any
 
 import voluptuous as vol
 from custom_fritzconnection import FritzConnection
+from custom_fritzconnection.core.exceptions import (
+    FritzConnectionException,
+    FritzSecurityError,
+)
 from custom_fritzconnection.lib.fritztam import FritzTAM
 from homeassistant import config_entries
 from homeassistant.const import CONF_PASSWORD, CONF_URL, CONF_USERNAME
@@ -192,7 +196,7 @@ class FritzBoxVoicemailFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def _test_credentials_and_get_tams(
         self, address: str, username: str, password: str
-    ) -> tuple[bool, list[dict[str, Any]]]:
+    ) -> tuple[str | None, list[dict[str, Any]]]:
         """Validate credentials and fetch structured TAM list."""
         try:
             fritz = await self.hass.async_add_executor_job(
@@ -208,10 +212,18 @@ class FritzBoxVoicemailFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             valid_tams = [
                 tam_item for tam_item in tams if tam_item.get("Name") is not None
             ]
+
+            if not valid_tams:
+                return "no_tams", []
+
+        except FritzSecurityError:
+            return "auth", []
+        except FritzConnectionException:
+            return "connection", []
         except Exception as exception:  # noqa: BLE001
             LOGGER.exception(
                 "Unexpected error during authentication/TAM retrieval: %s", exception
             )
-            return False, []
+            return "unknown", []
         else:
-            return True, valid_tams
+            return None, valid_tams
