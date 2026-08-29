@@ -6,7 +6,6 @@ from typing import Any
 
 import voluptuous as vol
 from custom_fritzconnection import FritzConnection
-from custom_fritzconnection.core.exceptions import FritzSecurityError
 from custom_fritzconnection.lib.fritztam import FritzTAM
 from homeassistant import config_entries
 from homeassistant.const import CONF_PASSWORD, CONF_URL, CONF_USERNAME
