@@ -6,6 +6,7 @@ from typing import Any
 
 import voluptuous as vol
 from custom_fritzconnection import FritzConnection
+from custom_fritzconnection.core.exceptions import FritzSecurityError
 from custom_fritzconnection.lib.fritztam import FritzTAM
 from homeassistant import config_entries
 from homeassistant.const import CONF_PASSWORD, CONF_URL, CONF_USERNAME
@@ -25,6 +26,7 @@ class FritzBoxVoicemailFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         """Initialize the config flow."""
         self._data: dict[str, Any] = {}
         self._available_tams: list[dict[str, Any]] = []
+        self._reauth_entry: config_entries.ConfigEntry | None = None
 
     async def async_step_user(
         self,
@@ -127,6 +129,61 @@ class FritzBoxVoicemailFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                             options=tam_options,
                             multiple=True,
                             mode=selector.SelectSelectorMode.DROPDOWN,
+                        )
+                    ),
+                }
+            ),
+            errors=_errors,
+        )
+
+    async def async_step_reauth(
+        self,
+        entry_data: dict[str, Any],  # noqa: ARG002
+    ) -> config_entries.ConfigFlowResult:
+        """Handle translation from reauth alert to reauth form."""
+        if not (entry_id := self.context.get("entry_id")):
+            return self.async_abort(reason="unknown")
+
+        self._reauth_entry = self.hass.config_entries.async_get_entry(entry_id)
+        return await self.async_step_reauth_confirm()
+
+    async def async_step_reauth_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> config_entries.ConfigFlowResult:
+        """Handle reauthorization with updated password."""
+        _errors: dict[str, str] = {}
+        if not self._reauth_entry:
+            return self.async_abort(reason="unknown")
+
+        if user_input is not None:
+            success, _ = await self._test_credentials_and_get_tams(
+                address=self._reauth_entry.data[CONF_URL],
+                username=self._reauth_entry.data[CONF_USERNAME],
+                password=user_input[CONF_PASSWORD],
+            )
+
+            if success:
+                new_data = {
+                    **self._reauth_entry.data,
+                    CONF_PASSWORD: user_input[CONF_PASSWORD],
+                }
+
+                self.hass.config_entries.async_update_entry(
+                    self._reauth_entry, data=new_data
+                )
+
+                await self.hass.config_entries.async_reload(self._reauth_entry.entry_id)
+                return self.async_abort(reason="reauth_successful")
+
+            _errors["base"] = "auth"
+
+        return self.async_show_form(
+            step_id="reauth_confirm",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_PASSWORD): selector.TextSelector(
+                        selector.TextSelectorConfig(
+                            type=selector.TextSelectorType.PASSWORD
                         )
                     ),
                 }

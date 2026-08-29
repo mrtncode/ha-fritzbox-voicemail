@@ -6,9 +6,17 @@ from typing import TYPE_CHECKING
 
 import voluptuous as vol
 from custom_fritzconnection import FritzConnection
+from custom_fritzconnection.core.exceptions import (
+    FritzConnectionException,
+    FritzSecurityError,
+)
 from custom_fritzconnection.lib.fritztam import FritzTAM
 from homeassistant.const import CONF_PASSWORD, CONF_URL, CONF_USERNAME, Platform
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import (
+    ConfigEntryAuthFailed,
+    ConfigEntryNotReady,
+    HomeAssistantError,
+)
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
@@ -131,13 +139,20 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: FritzboxVoicemailConfigEntry
 ) -> bool:
     """Set up FritzBox Voicemail from a config entry."""
-    fritz_connection = await hass.async_add_executor_job(
-        lambda: FritzConnection(
-            address=entry.data[CONF_URL],
-            user=entry.data[CONF_USERNAME],
-            password=entry.data[CONF_PASSWORD],
+    try:
+        fritz_connection = await hass.async_add_executor_job(
+            lambda: FritzConnection(
+                address=entry.data[CONF_URL],
+                user=entry.data[CONF_USERNAME],
+                password=entry.data[CONF_PASSWORD],
+            )
         )
-    )
+    except FritzSecurityError as err:
+        exception_message = "Invalid credentials for the FRITZ!Box"
+        raise ConfigEntryAuthFailed(exception_message) from err
+    except FritzConnectionException as err:
+        exception_message = "FRITZ!Box is currently unreachable"
+        raise ConfigEntryNotReady(exception_message) from err
 
     coordinator = FritzboxVoicemailDataUpdateCoordinator(hass, fritz_connection)
     await coordinator.async_config_entry_first_refresh()
