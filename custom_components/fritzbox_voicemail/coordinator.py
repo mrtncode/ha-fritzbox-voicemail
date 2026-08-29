@@ -5,7 +5,12 @@ from __future__ import annotations
 from datetime import timedelta
 from typing import TYPE_CHECKING, Any
 
+from custom_fritzconnection.core.exceptions import (
+    FritzConnectionException,
+    FritzSecurityError,
+)
 from custom_fritzconnection.lib.fritztam import FritzTAM
+from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
     UpdateFailed,
@@ -56,6 +61,8 @@ class FritzboxVoicemailDataUpdateCoordinator(DataUpdateCoordinator):
                 for msg in messages:
                     msg["Tam"] = tam_idx
                     all_messages.append(msg)
+            except FritzSecurityError:
+                raise
             except Exception as err:  # noqa: BLE001
                 LOGGER.warning("Could not fetch messages for TAM %s: %s", tam_idx, err)
 
@@ -68,6 +75,12 @@ class FritzboxVoicemailDataUpdateCoordinator(DataUpdateCoordinator):
         """Fetch data from FritzBox."""
         try:
             return await self.hass.async_add_executor_job(self._fetch_all_tam_data)
+        except FritzSecurityError as err:
+            e = "Authentication failed while fetching data from FritzBox"
+            raise ConfigEntryAuthFailed(e) from err
+        except FritzConnectionException as err:
+            e = f"Connection to FritzBox lost: {err}"
+            raise UpdateFailed(e) from err
         except Exception as err:
-            msg = f"Failed to update data from FritzBox: {err}"
-            raise UpdateFailed(msg) from err
+            e = f"Unexpected error while fetching data from FritzBox: {err}"
+            raise UpdateFailed(e) from err
