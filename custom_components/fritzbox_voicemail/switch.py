@@ -57,10 +57,7 @@ class FritzboxVoicemailSwitch(FritzboxVoicemailEntity, SwitchEntity):
         """Initialize the switch class."""
         super().__init__(coordinator, tam_index=tam_index, tam_name=tam_name)
         self.entity_description = entity_description
-        self._attr_unique_id = (
-            f"{coordinator.config_entry.entry_id}"
-            f"{self._tam_suffix}_{entity_description.key}"
-        )
+        self._attr_unique_id = f"{self._attr_unique_id}_{entity_description.key}"
         self.fritz_connection = coordinator.config_entry.runtime_data.client
         self.tam = FritzTAM(fc=self.fritz_connection)
 

@@ -28,14 +28,13 @@ class FritzboxVoicemailEntity(
         self.tam_index = tam_index
         name = tam_name or f"TAM {tam_index}"
 
-        self._tam_suffix = "" if int(tam_index) == 0 else f" TAM {tam_index}"
         self._attr_unique_id = f"{coordinator.config_entry.entry_id}_tam_{tam_index}"
 
         self._attr_device_info = DeviceInfo(
             identifiers={
                 (
                     DOMAIN,
-                    f"{coordinator.config_entry.entry_id}{self._tam_suffix}",
+                    f"{coordinator.config_entry.entry_id}_tam_{tam_index}",
                 ),
             },
             name=f"Fritz!Box Voicemail: {name}",
