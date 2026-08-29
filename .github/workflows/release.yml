@@ -8,15 +8,12 @@ permissions:
   contents: write
 
 jobs:
-  update_tag_manifest:
-    name: Update Manifest in Release Tag and Main
+  release_zip_file:
+    name: Prepare release asset
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository at release tag
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.release.tag_name }}
-          fetch-depth: 0
+      - name: Check out repository
+        uses: actions/checkout@v7
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -31,15 +28,16 @@ jobs:
         run: |
           python3 .github/scripts/update_version.py --version ${{ steps.version.outputs.version }}
 
-      - name: Update Main Branch and Release Tag
+      - name: Create zip
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          cd custom_components/fritzbox_voicemail
+          zip -r fritzbox_voicemail.zip ./
 
-          git add custom_components/fritzbox_voicemail/manifest.json
-
-          if ! git diff --staged --quiet; then
-            git commit -m "chore: set manifest version to ${{ steps.version.outputs.version }} [skip ci]"
-            git push origin HEAD:main
-            git push origin HEAD:refs/tags/${{ github.event.release.tag_name }} --force
-          fi
+      - name: Upload zip to release
+        uses: svenstaro/upload-release-action@29e53e917877a24fad85510ded594ab3c9ca12de
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: custom_components/fritzbox_voicemail/fritzbox_voicemail.zip
+          asset_name: fritzbox_voicemail.zip
+          tag: ${{ github.event.release.tag_name }}
+          overwrite: true
