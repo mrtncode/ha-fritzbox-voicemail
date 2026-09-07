@@ -126,10 +126,15 @@ async def async_delete_message(hass: HomeAssistant, service_call: ServiceCall) -
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:  # noqa: ARG001
     """Set up the FritzBox Voicemail integration."""
     hass.http.register_view(MailboxView(hass))
+
+    # Wir fügen die Typen-Definition (-> None) hinzu
+    async def handle_delete_service(call: ServiceCall) -> None:
+        await async_delete_message(hass, call)
+
     hass.services.async_register(
         DOMAIN,
         SERVICE_DELETE_VOICEMAIL_MESSAGE,
-        lambda call: async_delete_message(hass, call),
+        handle_delete_service,
         schema=SERVICE_SCHEMA,
     )
     return True
