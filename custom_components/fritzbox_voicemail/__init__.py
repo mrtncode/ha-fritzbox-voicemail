@@ -45,24 +45,33 @@ SERVICE_SCHEMA = vol.All(
 
 
 def _get_target_entries(
-    hass: HomeAssistant, entity_ids: list[str]
+    hass: HomeAssistant, service_call: ServiceCall
 ) -> set[tuple[FritzboxVoicemailConfigEntry, int]]:
-    """Sucht die passenden FritzBox Config-Entries und den zugehörigen TAM-Index."""
+    """Search for config entries."""
     target_entries: set[tuple[FritzboxVoicemailConfigEntry, int]] = set()
     ent_reg = er.async_get(hass)
+    dev_reg = dr.async_get(hass)
 
+    config_entry_ids: set[str] = set()
+
+    entity_ids = service_call.data.get("entity_id", [])
+    if isinstance(entity_ids, str):
+        entity_ids = [entity_ids]
     for entity_id in entity_ids:
         entry = ent_reg.async_get(entity_id)
-        if (
-            entry
-            and entry.config_entry_id
-            and (
-                config_entry := hass.config_entries.async_get_entry(
-                    entry.config_entry_id
-                )
-            )
-            and config_entry.domain == DOMAIN
-        ):
+        if entry and entry.config_entry_id:
+            config_entry_ids.add(entry.config_entry_id)
+
+    device_ids = service_call.data.get("device_id", [])
+    if isinstance(device_ids, str):
+        device_ids = [device_ids]
+    for device_id in device_ids:
+        if device := dev_reg.async_get(device_id):
+            config_entry_ids.update(device.config_entries)
+
+    for entry_id in config_entry_ids:
+        config_entry = hass.config_entries.async_get_entry(entry_id)
+        if config_entry and config_entry.domain == DOMAIN:
             idx = int(config_entry.data.get(CONF_TAM_INDEX, 0))
             target_entries.add((config_entry, idx))
 
@@ -82,7 +91,7 @@ async def async_delete_message(hass: HomeAssistant, service_call: ServiceCall) -
     if isinstance(entity_ids, str):
         entity_ids = [entity_ids]
 
-    target_entries = _get_target_entries(hass, entity_ids)
+    target_entries = _get_target_entries(hass, service_call)
 
     if not target_entries:
         msg = "No active FritzBox Voicemail integration found."
