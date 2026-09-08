@@ -4,7 +4,7 @@ delete_voicemail_message:
   fields:
     device_id:
       name: FRITZ!Box Voicemail
-      description: Select the FRITZ!Box voicemaildevice.
+      description: Select the FRITZ!Box voicemail device.
       required: true
       selector:
         device:
