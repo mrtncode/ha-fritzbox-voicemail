@@ -1,14 +1,14 @@
 delete_voicemail_message:
   name: Delete voicemail messages
   description: Delete one voicemail message by index or delete all messages.
-  target:
-    entity:
-      integration: fritzbox_voicemail
-      domain:
-        - sensor
-    device:
-      integration: fritzbox_voicemail
   fields:
+    device_id:
+      name: FRITZ!Box Voicemail
+      description: Select the FRITZ!Box voicemaildevice.
+      required: true
+      selector:
+        device:
+          integration: fritzbox_voicemail
     delete_mode:
       name: Delete mode
       description: Choose whether to delete a specific message or all messages.
