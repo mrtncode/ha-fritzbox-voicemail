@@ -57,7 +57,9 @@ class FritzBoxVoicemailFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 "Error during authentication/TAM retrieval: %s",
                 error,
             )
-            _errors["base"] = "auth" if not error else "no_tams_found"
+            if error is None:
+                error = "no_tams"
+            _errors["base"] = error
 
         return self.async_show_form(
             step_id="user",
@@ -183,7 +185,7 @@ class FritzBoxVoicemailFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 return self.async_abort(reason="reauth_successful")
 
             LOGGER.error("Reauthorization failed.")
-            _errors["base"] = "auth"
+            _errors["base"] = error or "auth"
 
         return self.async_show_form(
             step_id="reauth_confirm",

@@ -12,6 +12,11 @@
                 "data": {
                     "tams": "Add voicemail"
                 }
+            },
+            "reauth_confirm": {
+                "data": {
+                    "password": "Password"
+                }
             }
         },
         "error": {
@@ -21,7 +26,8 @@
             "no_tams": "No voicemail boxes found. Please check your Fritz!Box settings."
         },
         "abort": {
-            "already_configured": "This entry is already configured."
+            "already_configured": "This entry is already configured.",
+            "reauth_successful": "Reauthentication was successful."
         }
     }
 }
