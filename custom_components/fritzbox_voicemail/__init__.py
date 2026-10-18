@@ -22,7 +22,7 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.loader import async_get_loaded_integration
 
-from .const import CONF_TAM_INDEX, DOMAIN
+from .const import DOMAIN
 from .coordinator import FritzboxVoicemailDataUpdateCoordinator
 from .data import FritzboxVoicemailConfigEntry, FritzboxVoicemailData
 from .views import MailboxView
@@ -44,7 +44,7 @@ SERVICE_SCHEMA = vol.All(
 )
 
 
-def _get_target_entries(
+def _get_target_entries(  # noqa: PLR0912
     hass: HomeAssistant, service_call: ServiceCall
 ) -> set[tuple[FritzboxVoicemailConfigEntry, int]]:
     """Search for config entries."""
@@ -52,28 +52,64 @@ def _get_target_entries(
     ent_reg = er.async_get(hass)
     dev_reg = dr.async_get(hass)
 
-    config_entry_ids: set[str] = set()
-
     entity_ids = service_call.data.get("entity_id", [])
     if isinstance(entity_ids, str):
         entity_ids = [entity_ids]
     for entity_id in entity_ids:
         entry = ent_reg.async_get(entity_id)
-        if entry and entry.config_entry_id:
-            config_entry_ids.add(entry.config_entry_id)
+        if not entry or not entry.config_entry_id:
+            error = f"Unable to resolve entity target for: {entity_id}"
+            raise HomeAssistantError(error)
+
+        config_entry = hass.config_entries.async_get_entry(entry.config_entry_id)
+        if not config_entry or config_entry.domain != DOMAIN:
+            error = f"Unable to resolve FritzBox Voicemail entity target: {entity_id}"
+            raise HomeAssistantError(error)
+
+        prefix = f"{config_entry.entry_id}_tam_"
+        if not entry.unique_id.startswith(prefix):
+            error = f"Entity is not a FritzBox Voicemail TAM: {entity_id}"
+            raise HomeAssistantError(error)
+
+        try:
+            tam_index = int(entry.unique_id.removeprefix(prefix).split("_", 1)[0])
+        except TypeError, ValueError:
+            error = f"Unable to resolve TAM index for entity: {entity_id}"
+            raise HomeAssistantError(error) from None
+        target_entries.add((config_entry, tam_index))
 
     device_ids = service_call.data.get("device_id", [])
     if isinstance(device_ids, str):
         device_ids = [device_ids]
     for device_id in device_ids:
-        if device := dev_reg.async_get(device_id):
-            config_entry_ids.update(device.config_entries)
+        device = dev_reg.async_get(device_id)
+        if not device:
+            error = f"Unable to resolve device target for: {device_id}"
+            raise HomeAssistantError(error) from None
 
-    for entry_id in config_entry_ids:
-        config_entry = hass.config_entries.async_get_entry(entry_id)
-        if config_entry and config_entry.domain == DOMAIN:
-            idx = int(config_entry.data.get(CONF_TAM_INDEX, 0))
-            target_entries.add((config_entry, idx))
+        tam_identifiers = [
+            identifier
+            for identifier in device.identifiers
+            if identifier[0] == DOMAIN and "_tam_" in identifier[1]
+        ]
+        if not tam_identifiers:
+            error = f"Device is not a FritzBox Voicemail TAM target: {device_id}"
+            raise HomeAssistantError(error) from None
+
+        for _, identifier in tam_identifiers:
+            entry_id, _, index = identifier.rpartition("_tam_")
+            config_entry = hass.config_entries.async_get_entry(entry_id)
+            if not config_entry or config_entry.domain != DOMAIN:
+                error = (
+                    f"Unable to resolve FritzBox Voicemail device target: {device_id}"
+                )
+                raise HomeAssistantError(error) from None
+            try:
+                tam_index = int(index)
+            except ValueError:
+                error = f"Unable to resolve TAM index for device: {device_id}"
+                raise HomeAssistantError(error) from None
+            target_entries.add((config_entry, tam_index))
 
     return target_entries
 
