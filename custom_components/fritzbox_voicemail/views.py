@@ -1,6 +1,6 @@
 """Views for audio streaming."""
 
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING
 
 from aiohttp import web
 from fritzconnection_enhanced.lib.fritztam import FritzTAM
