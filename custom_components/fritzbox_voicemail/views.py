@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, ClassVar
 
 from aiohttp import web
 from fritzconnection_enhanced.lib.fritztam import FritzTAM
-from homeassistant.components.http import HomeAssistantView
+from homeassistant.helpers.http import HomeAssistantView
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -16,11 +16,7 @@ class MailboxView(HomeAssistantView):
     """View to handle requests for voicemail messages from the FritzBox."""
 
     url = "/api/mailbox/{entry_id}/{tam_index}/{message_index}"
-    # Keep the old URLs for backward compatibility
-    extra_urls: ClassVar[list[str]] = [
-        "/api/mailbox/{tam_index}/{message_index}",
-        "/api/mailbox/{message_index}",
-    ]
+
     name = "api:mailbox"
     requires_auth = True
 
