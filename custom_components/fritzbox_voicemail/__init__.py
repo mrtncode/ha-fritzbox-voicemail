@@ -5,12 +5,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import voluptuous as vol
-from custom_fritzconnection import FritzConnection
-from custom_fritzconnection.core.exceptions import (
+from fritzconnection_enhanced import FritzConnection
+from fritzconnection_enhanced.core.exceptions import (
     FritzConnectionException,
     FritzSecurityError,
 )
-from custom_fritzconnection.lib.fritztam import FritzTAM
+from fritzconnection_enhanced.lib.fritztam import FritzTAM
 from homeassistant.const import CONF_PASSWORD, CONF_URL, CONF_USERNAME, Platform
 from homeassistant.exceptions import (
     ConfigEntryAuthFailed,

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from custom_fritzconnection.lib.fritztam import FritzTAM
+from fritzconnection_enhanced.lib.fritztam import FritzTAM
 from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
 
 from .const import CONF_TAMS

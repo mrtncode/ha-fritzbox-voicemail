@@ -5,11 +5,11 @@ from __future__ import annotations
 from datetime import timedelta
 from typing import TYPE_CHECKING, Any
 
-from custom_fritzconnection.core.exceptions import (
+from fritzconnection_enhanced.core.exceptions import (
     FritzConnectionException,
     FritzSecurityError,
 )
-from custom_fritzconnection.lib.fritztam import FritzTAM
+from fritzconnection_enhanced.lib.fritztam import FritzTAM
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
@@ -19,7 +19,7 @@ from homeassistant.helpers.update_coordinator import (
 from .const import CONF_TAMS, DOMAIN, LOGGER
 
 if TYPE_CHECKING:
-    from custom_fritzconnection.core.fritzconnection import FritzConnection
+    from fritzconnection_enhanced.core.fritzconnection import FritzConnection
     from homeassistant.core import HomeAssistant
 
     from .data import FritzboxVoicemailConfigEntry

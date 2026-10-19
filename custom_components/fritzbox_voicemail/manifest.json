@@ -12,7 +12,7 @@
     "iot_class": "local_polling",
     "issue_tracker": "https://github.com/mrtncode/ha-fritzbox-voicemail/issues",
     "requirements": [
-        "custom_fritzconnection@git+https://github.com/mrtncode/fritzconnection.git@c3cb1554ad70909705846de5827f2431b2c9a26a"
+        "fritzconnection-enhanced==1.0.0"
     ],
-    "version": "v2.0.1"
+    "version": "v0.0.0"
 }

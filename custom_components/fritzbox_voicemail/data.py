@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from custom_fritzconnection.core.fritzconnection import FritzConnection
+    from fritzconnection_enhanced.core.fritzconnection import FritzConnection
     from homeassistant.config_entries import ConfigEntry
     from homeassistant.loader import Integration
 

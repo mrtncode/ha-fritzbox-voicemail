@@ -3,7 +3,7 @@
 from typing import TYPE_CHECKING, ClassVar
 
 from aiohttp import web
-from custom_fritzconnection.lib.fritztam import FritzTAM
+from fritzconnection_enhanced.lib.fritztam import FritzTAM
 from homeassistant.components.http import HomeAssistantView
 
 if TYPE_CHECKING:
