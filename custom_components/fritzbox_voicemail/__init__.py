@@ -73,9 +73,15 @@ def _get_target_entries(  # noqa: PLR0912
 
         try:
             tam_index = int(entry.unique_id.removeprefix(prefix).split("_", 1)[0])
-        except TypeError, ValueError:
+        except TypeError:
             error = f"Unable to resolve TAM index for entity: {entity_id}"
             raise HomeAssistantError(error) from None
+        except ValueError:
+            error = f"Unable to resolve TAM index for entity: {entity_id}"
+            raise HomeAssistantError(error) from None
+        except Exception as err:
+            error = f"Unable to resolve TAM index for entity: {entity_id}"
+            raise HomeAssistantError(error) from err
         target_entries.add((config_entry, tam_index))
 
     device_ids = service_call.data.get("device_id", [])

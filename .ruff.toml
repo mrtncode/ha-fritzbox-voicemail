@@ -16,7 +16,8 @@ ignore = [
     "COM812", # incompatible with formatter
     "ISC001", # incompatible with formatter,
     "EXE002",
-    "CPY001" # ignore copyright notices in each file
+    "CPY001", # ignore copyright notices in each file
+    "PLR0915"
 ]
 
 [lint.flake8-pytest-style]
