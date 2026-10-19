@@ -3,10 +3,7 @@
 ### HACS Installation
 
 1. Install [HACS](https://github.com/custom-components/hacs) if you haven't already.
-2. Add the custom repository to HACS:
-
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=mrtncode&repository=ha-fritzbox-voicemail&category=integration)
-
+2. Search for the “fritzbox voicemail” integration in HACS
 3. Click on install
 4. Restart Home Assistant
 5. Add the integration via the [Home Assistant UI](https://my.home-assistant.io/redirect/integrations/)
